@@ -11,7 +11,9 @@ library
   ghc-options:         -Wall
   default-language:    Haskell2010
   build-depends:       base >=4.7 && <4.8,
-                       cauterize >= 0.1.0.0
+                       cauterize >= 0.1.0.0,
+                       interpolate,
+                       text
   exposed-modules:     Cauterize.C11Stream.HFile
 
 executable caut-c11-stream
@@ -21,6 +23,9 @@ executable caut-c11-stream
   build-depends:       base >=4.7 && <4.8,
                        caut-c11-stream,
                        cauterize >= 0.1.0.0,
-                       optparse-applicative
+                       optparse-applicative,
+                       directory,
+                       filepath,
+                       text
   default-language:    Haskell2010
   other-modules:       Cauterize.C11Stream.Options
