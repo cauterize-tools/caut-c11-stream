@@ -13,6 +13,12 @@ hFileFromSpec :: S.Specification -> String
 hFileFromSpec s = unindent [i|
   #ifndef #{guardSym}
   #define #{guardSym}
+
+  #include "#{ln}_types.h"
+  #include "#{ln}_descriptors.h"
+  #include "#{ln}_encode.h"
+  #include "#{ln}_decode.h"
+
   #endif /* #{guardSym} */
 |]
   where
