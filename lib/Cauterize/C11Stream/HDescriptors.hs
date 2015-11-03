@@ -11,6 +11,7 @@ import Data.Text (unpack)
 import Data.List (intercalate)
 
 import qualified Cauterize.Specification as S
+import qualified Cauterize.CommonTypes as C
 
 hDescriptorsFromSpec :: S.Specification -> String
 hDescriptorsFromSpec s = unindent [i|
@@ -44,5 +45,19 @@ hDescriptorsFromSpec s = unindent [i|
   };
 |]
     typeIndicies =
-      let withIndex = zip [(0 :: Integer)..] types
-      in intercalate "\n" $ map (\(ix,t) -> [i|    type_index_#{ln}_#{ident2str $ S.typeName t} = #{ix},|]) withIndex
+      let withIndex = zip (map S.typeName types) [(0 :: Integer)..]
+          prims =
+            [ (C.primToText C.PBool, (-11))
+            , (C.primToText C.PF64 , (-10))
+            , (C.primToText C.PF32 , ( -9))
+            , (C.primToText C.PS64 , ( -8))
+            , (C.primToText C.PS32 , ( -7))
+            , (C.primToText C.PS16 , ( -6))
+            , (C.primToText C.PS8  , ( -5))
+            , (C.primToText C.PU64 , ( -4))
+            , (C.primToText C.PU32 , ( -3))
+            , (C.primToText C.PU16 , ( -2))
+            , (C.primToText C.PU8  , ( -1))
+            ]
+          fn (t, ix) = [i|    type_index_#{ln}_#{ident2str t} = #{ix},|]
+      in intercalate "\n" $ map fn (prims ++ withIndex)

@@ -9,6 +9,7 @@ import Data.String.Interpolate
 import Data.String.Interpolate.Util
 import Data.Text (unpack)
 import Data.List (intercalate)
+import Data.Maybe
 
 import qualified Cauterize.Specification as S
 import qualified Cauterize.CommonTypes as C
@@ -17,11 +18,11 @@ cDescriptorsFromSpec :: S.Specification -> String
 cDescriptorsFromSpec s = unindent [i|
   #include "#{ln}_descriptors.h"
 
+#{fieldSets s types}
+
   struct type_descriptor const type_descriptors[TYPE_COUNT_#{ln}] = {
 #{descriptorList}
-  };
-
-|]
+  };|]
   where
     ln = unpack (S.specName s)
     types = S.specTypes s
@@ -40,6 +41,31 @@ cDescriptorsFromSpec s = unindent [i|
       },
     },|]
 
+fieldSets :: S.Specification -> [S.Type] -> String
+fieldSets s ts = intercalate "\n" $ mapMaybe (fieldSet s) ts
+
+fieldSet :: S.Specification -> S.Type -> Maybe String
+fieldSet s (S.Type { S.typeName = tn, S.typeDesc = d}) = n
+  where
+    tn' = ident2str tn
+    n = case d of
+      S.Synonym {}     -> Nothing
+      S.Range {}       -> Nothing
+      S.Array {}       -> Nothing
+      S.Vector {}      -> Nothing
+      S.Enumeration {} -> Nothing
+      S.Record { S.recordFields = fs} -> Just $ mkFieldSet tn' "record" s fs
+      S.Combination { S.combinationFields = fs } -> Just $ mkFieldSet tn' "combination" s fs
+      S.Union { S.unionFields = fs } -> Just $ mkFieldSet tn' "union" s fs
+
+mkFieldSet :: String -> String -> S.Specification -> [S.Field] -> String
+mkFieldSet name proto s fs = chompNewline [i|
+  struct caut_field const #{proto}_fields_#{ln}_#{name}[] = {
+#{intercalate "\n" $ map (prototypeField s) fs}
+  };
+|]
+  where
+    ln = unpack (S.specName s)
 
 typeToPrimString :: S.Type -> String
 typeToPrimString S.Type { S.typeDesc = d } = n
@@ -54,7 +80,16 @@ typeToPrimString S.Type { S.typeDesc = d } = n
       S.Combination {} -> "combination"
       S.Union {}       -> "union"
 
---prototypeFields :: S.Specification
+prototypeField :: S.Specification -> S.Field -> String
+prototypeField _ S.EmptyField { S.fieldName = n, S.fieldIndex = ix }
+  = chompNewline [i|
+    { .name = "#{ident2str n}", .index = #{ix}, .data = false, .ref_index = 0 },|]
+prototypeField s S.DataField { S.fieldName = n, S.fieldIndex = ix, S.fieldRef = r }
+  = chompNewline [i|
+    { .name = "#{ident2str n}", .index = #{ix}, .data = true, .ref_index = type_index_#{ln}_#{ident2str r} },|]
+  where
+    ln = unpack (S.specName s)
+
 
 prototypeBody :: S.Specification -> S.Type -> String
 prototypeBody s (S.Type { S.typeName = n, S.typeDesc = d }) =
