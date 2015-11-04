@@ -21,6 +21,7 @@ hTypesFromSpec s = unindent [i|
   #ifndef #{guardSym}
   #define #{guardSym}
 
+  #include "cauterize.h"
   #include <stdint.h>
 
   #define NAME_#{ln} "#{ln}"

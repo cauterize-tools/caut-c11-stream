@@ -17,6 +17,7 @@ import qualified Cauterize.CommonTypes as C
 cDescriptorsFromSpec :: S.Specification -> String
 cDescriptorsFromSpec s = unindent [i|
   #include "#{ln}_descriptors.h"
+  #include "#{ln}_types.h"
 
   #include <stdbool.h>
   #include <stdint.h>
@@ -65,7 +66,7 @@ fieldSet s (S.Type { S.typeName = tn, S.typeDesc = d}) = n
 mkFieldSet :: String -> String -> S.Specification -> [S.Field] -> String
 mkFieldSet name proto s fs = chompNewline [i|
   struct caut_field const #{proto}_fields_#{ln}_#{name}[] = {
-#{intercalate "\n" $ map (prototypeField s) fs}
+#{intercalate "\n" $ map (prototypeField s name) fs}
   };
 |]
   where
@@ -84,15 +85,17 @@ typeToPrimString S.Type { S.typeDesc = d } = n
       S.Combination {} -> "combination"
       S.Union {}       -> "union"
 
-prototypeField :: S.Specification -> S.Field -> String
-prototypeField _ S.EmptyField { S.fieldName = n, S.fieldIndex = ix }
+prototypeField :: S.Specification -> String -> S.Field -> String
+prototypeField _ _ S.EmptyField { S.fieldName = n, S.fieldIndex = ix }
   = chompNewline [i|
-    { .name = "#{ident2str n}", .field_index = #{ix}, .data = false, .ref_id = 0 },|]
-prototypeField s S.DataField { S.fieldName = n, S.fieldIndex = ix, S.fieldRef = r }
+    { .name = "#{ident2str n}", .field_index = #{ix}, .data = false, .ref_id = 0, .offset = 0 },|]
+prototypeField s typeName S.DataField { S.fieldName = n, S.fieldIndex = ix, S.fieldRef = r }
   = chompNewline [i|
-    { .name = "#{ident2str n}", .field_index = #{ix}, .data = true, .ref_id = type_id_#{ln}_#{ident2str r} },|]
+    { .name = "#{n'}", .field_index = #{ix}, .data = true, .ref_id = type_id_#{ln}_#{r'}, .offset = offsetof(struct #{typeName}, #{n'}) },|]
   where
     ln = unpack (S.specName s)
+    n' = ident2str n
+    r' = ident2str r
 
 
 prototypeBody :: S.Specification -> S.Type -> String
@@ -101,11 +104,12 @@ prototypeBody s (S.Type { S.typeName = n, S.typeDesc = d }) =
     S.Synonym { S.synonymRef = r }
       -> chompNewline [i|
         .ref_id = type_id_#{ln}_#{ident2str r},|]
-    S.Range { S.rangeOffset = ro, S.rangeLength = rl, S.rangeTag = rt }
+    S.Range { S.rangeOffset = ro, S.rangeLength = rl, S.rangeTag = rt, S.rangePrim = rp }
       -> chompNewline [i|
         .offset = #{ro},
         .length = #{rl},
-        .tag = #{tagToTagEnumStr rt},|]
+        .tag = #{tagToTagEnumStr rt},
+        .word_size = #{C.sizeMax . C.primToSize $ rp},|]
     S.Array { S.arrayRef = r, S.arrayLength = al }
       -> chompNewline [i|
         .ref_id = type_id_#{ln}_#{ident2str r},
@@ -136,7 +140,7 @@ prototypeBody s (S.Type { S.typeName = n, S.typeDesc = d }) =
     ln = unpack (S.specName s)
 
 tagToTagEnumStr :: C.Tag -> String
-tagToTagEnumStr C.T1 = "caut_tag_1"
-tagToTagEnumStr C.T2 = "caut_tag_2"
-tagToTagEnumStr C.T4 = "caut_tag_4"
-tagToTagEnumStr C.T8 = "caut_tag_8"
+tagToTagEnumStr C.T1 = "caut_tag_8"
+tagToTagEnumStr C.T2 = "caut_tag_16"
+tagToTagEnumStr C.T4 = "caut_tag_32"
+tagToTagEnumStr C.T8 = "caut_tag_64"
