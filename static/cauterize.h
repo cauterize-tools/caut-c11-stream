@@ -3,21 +3,20 @@
 
 #include "cauterize_types.h"
 #include "cauterize_descriptors.h"
+#include "cauterize_iterators.h"
 
 #include <stdint.h>
 
-enum caut_status caut_encode(
-    struct schema_descriptor const * sd,
-    int type_id,
-    void const * src_type,
-    void * dst_buf,
-    size_t dst_size);
+enum caut_status caut_enc_get(
+    struct schema_encode_iterator * ei,
+    void * buf,
+    size_t buf_size,
+    size_t * enc_bytes);
 
-enum caut_status caut_decode(
-    struct schema_descriptor const * sd,
-    int type_id,
-    void * dst_type,
-    void const * src_buf,
-    size_t src_size);
+enum caut_status caut_dec_put(
+    struct schema_decode_iterator * di,
+    void const * buf,
+    size_t buf_size,
+    size_t * dec_bytes);
 
 #endif /* CAUTERIZE_H */

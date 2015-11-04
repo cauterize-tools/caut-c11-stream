@@ -63,19 +63,20 @@ union caut_proto_iter {
 };
 
 struct type_iterator {
+    bool initialized;
     enum caut_proto_tag proto;
     union caut_proto_iter prototype;
 };
+
+void type_iterator_init(struct type_iterator * ti);
 
 struct schema_encode_iterator {
     struct schema_descriptor const * desc;
     struct type_iterator * iters;
     size_t iter_count;
     size_t iter_top;
+    int type_id;
     void const * src_type;
-    void * dst_buf;
-    size_t buf_size;
-    size_t buf_pos;
 };
 
 struct schema_decode_iterator {
@@ -83,10 +84,8 @@ struct schema_decode_iterator {
     struct type_iterator * iters;
     size_t iter_count;
     size_t iter_top;
+    int type_id;
     void * dst_type;
-    void const * src_buf;
-    size_t buf_size;
-    size_t buf_pos;
 };
 
 enum caut_status schema_encode_iterator_init(
@@ -94,18 +93,16 @@ enum caut_status schema_encode_iterator_init(
     struct schema_descriptor const * sd,
     struct type_iterator * ti,
     size_t ti_count,
-    void const * src_type,
-    void * dst_buf,
-    size_t buf_size);
+    int type_id,
+    void const * src_type);
 
 enum caut_status schema_decode_iterator_init(
     struct schema_decode_iterator * si,
     struct schema_descriptor const * sd,
     struct type_iterator * ti,
     size_t ti_count,
-    void * dst_type,
-    void const * src_buf,
-    size_t buf_size);
+    int type_id,
+    void * dst_type);
 
 
 #endif /* CAUTERIZE_ITERATORS_H */
