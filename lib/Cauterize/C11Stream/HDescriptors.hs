@@ -29,7 +29,7 @@ hDescriptorsFromSpec s = unindent [i|
 #{typeIndiciesEnum}
 
   /* an array of type descriptors */
-  extern struct type_descriptor const type_descriptors[TYPE_COUNT_#{ln}];
+  extern struct type_descriptor const type_descriptors_#{ln}[TYPE_COUNT_#{ln}];
 
   #endif /* #{guardSym} */
 |]

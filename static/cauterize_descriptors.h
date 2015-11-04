@@ -82,4 +82,7 @@ struct type_descriptor {
     union caut_prototype prototype;
 };
 
+#define CAUT_PRIMITIVE_COUNT (11)
+extern struct type_descriptor const primitive_descriptors[CAUT_PRIMITIVE_COUNT];
+
 #endif /* CAUTERIZE_DESCRIPTORS_H */

@@ -25,7 +25,7 @@ cDescriptorsFromSpec s = unindent [i|
 
 #{fieldSets s types}
 
-  struct type_descriptor const type_descriptors[TYPE_COUNT_#{ln}] = {
+  struct type_descriptor const type_descriptors_#{ln}[TYPE_COUNT_#{ln}] = {
 #{descriptorList}
   };|]
   where
