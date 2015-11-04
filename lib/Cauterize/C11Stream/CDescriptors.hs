@@ -19,6 +19,8 @@ cDescriptorsFromSpec s = unindent [i|
   #include "#{ln}_descriptors.h"
   #include "#{ln}_types.h"
 
+  #include "cauterize_iterators.h"
+
   #include <stdbool.h>
   #include <stdint.h>
   #include <stddef.h>
@@ -27,6 +29,11 @@ cDescriptorsFromSpec s = unindent [i|
 
   struct type_descriptor const type_descriptors_#{ln}[TYPE_COUNT_#{ln}] = {
 #{descriptorList}
+  };
+
+  struct schema_descriptor const schema_descriptor_#{ln} = {
+    .type_count = TYPE_COUNT_#{ln},
+    .types = type_descriptors_#{ln},
   };|]
   where
     ln = unpack (S.specName s)

@@ -1,6 +1,9 @@
 #ifndef CAUTERIZE_TYPES_H
 #define CAUTERIZE_TYPES_H
 
+#include <stdint.h>
+#include <stddef.h>
+
 enum caut_proto_tag {
     caut_proto_primitive,
     caut_proto_synonym,
@@ -24,5 +27,11 @@ typedef uint8_t caut_tag8_t;
 typedef uint16_t caut_tag16_t;
 typedef uint32_t caut_tag32_t;
 typedef uint64_t caut_tag64_t;
+
+enum caut_status {
+    caut_status_ok,
+    caut_status_err,
+    caut_status_err_invalid_type_id,
+};
 
 #endif /* CAUTERIZE_TYPES_H */

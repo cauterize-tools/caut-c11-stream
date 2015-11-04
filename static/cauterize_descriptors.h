@@ -82,6 +82,11 @@ struct type_descriptor {
     union caut_prototype prototype;
 };
 
+struct schema_descriptor {
+    size_t type_count;
+    struct type_descriptor const * types;
+};
+
 #define CAUT_PRIMITIVE_COUNT (11)
 extern struct type_descriptor const primitive_descriptors[CAUT_PRIMITIVE_COUNT];
 

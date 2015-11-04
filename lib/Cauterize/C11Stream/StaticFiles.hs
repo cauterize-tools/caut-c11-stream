@@ -21,6 +21,9 @@ descriptorsDotH = ("cauterize_descriptors.h", $(embedFile "static/cauterize_desc
 iteratorsDotH :: (FilePath, B.ByteString)
 iteratorsDotH = ("cauterize_iterators.h", $(embedFile "static/cauterize_iterators.h"))
 
+iteratorsDotC :: (FilePath, B.ByteString)
+iteratorsDotC = ("cauterize_iterators.c", $(embedFile "static/cauterize_iterators.c"))
+
 allFiles :: [(FilePath, B.ByteString)]
 allFiles =
   [ cauterizeDotH
@@ -28,4 +31,5 @@ allFiles =
   , cauterizeTypesDotH
   , descriptorsDotH
   , iteratorsDotH
+  , iteratorsDotC
   ]

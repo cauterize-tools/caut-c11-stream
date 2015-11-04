@@ -25,6 +25,9 @@ hDescriptorsFromSpec s = unindent [i|
   /* number of types */
   #define TYPE_COUNT_#{ln} (#{typeCount})
 
+  /* schema depth */
+  #define SCHEMA_DEPTH_#{ln} (#{depth})
+
   /* an index for each type */
 #{typeIndiciesEnum}
 
@@ -36,6 +39,7 @@ hDescriptorsFromSpec s = unindent [i|
   where
     guardSym = [i|_CAUTERIZE_C11STREAM_#{ln}_DESCRIPTORS_|]
     ln = unpack (S.specName s)
+    depth = S.specDepth s
     types = S.specTypes s
     typeCount = length types
 
