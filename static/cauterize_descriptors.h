@@ -1,7 +1,7 @@
 #ifndef CAUTERIZE_DESCRIPTORS_H
 #define CAUTERIZE_DESCRIPTORS_H
 
-#include "cauterize.h"
+#include "cauterize_types.h"
 
 #include <stdbool.h>
 #include <stddef.h>
