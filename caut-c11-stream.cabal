@@ -15,23 +15,27 @@ library
                      , interpolate
                      , containers
                      , text
+                     , file-embed
+                     , bytestring
   exposed-modules:     Cauterize.C11Stream.HFile
                      , Cauterize.C11Stream.HTypes
                      , Cauterize.C11Stream.HDescriptors
                      , Cauterize.C11Stream.CDescriptors
                      , Cauterize.C11Stream.Util
+                     , Cauterize.C11Stream.StaticFiles
 
 
 executable caut-c11-stream
   hs-source-dirs:      bin
   main-is:             Main.hs
   ghc-options:         -Wall -Werror -O2 -threaded
-  build-depends:       base >=4.7 && <4.8,
-                       caut-c11-stream,
-                       cauterize >= 0.1.0.0,
-                       optparse-applicative,
-                       directory,
-                       filepath,
-                       text
+  build-depends:       base >=4.7 && <4.8
+                     , caut-c11-stream
+                     , cauterize >= 0.1.0.0
+                     , optparse-applicative
+                     , directory
+                     , filepath
+                     , text
+                     , bytestring
   default-language:    Haskell2010
   other-modules:       Cauterize.C11Stream.Options

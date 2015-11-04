@@ -18,6 +18,10 @@ cDescriptorsFromSpec :: S.Specification -> String
 cDescriptorsFromSpec s = unindent [i|
   #include "#{ln}_descriptors.h"
 
+  #include <stdbool.h>
+  #include <stdint.h>
+  #include <stddef.h>
+
 #{fieldSets s types}
 
   struct type_descriptor const type_descriptors[TYPE_COUNT_#{ln}] = {
@@ -34,9 +38,9 @@ cDescriptorsFromSpec s = unindent [i|
       in chompNewline [i|
     {
       .name = "#{n}",
-      .index = type_index_#{ln}_#{n},
+      .type_id = type_id_#{ln}_#{n},
       .prototype_tag = caut_proto_#{tps},
-      .prototype.#{tps} = {
+      .prototype.c_#{tps} = {
 #{prototypeBody s t}
       },
     },|]
@@ -83,10 +87,10 @@ typeToPrimString S.Type { S.typeDesc = d } = n
 prototypeField :: S.Specification -> S.Field -> String
 prototypeField _ S.EmptyField { S.fieldName = n, S.fieldIndex = ix }
   = chompNewline [i|
-    { .name = "#{ident2str n}", .index = #{ix}, .data = false, .ref_index = 0 },|]
+    { .name = "#{ident2str n}", .field_index = #{ix}, .data = false, .ref_id = 0 },|]
 prototypeField s S.DataField { S.fieldName = n, S.fieldIndex = ix, S.fieldRef = r }
   = chompNewline [i|
-    { .name = "#{ident2str n}", .index = #{ix}, .data = true, .ref_index = type_index_#{ln}_#{ident2str r} },|]
+    { .name = "#{ident2str n}", .field_index = #{ix}, .data = true, .ref_id = type_id_#{ln}_#{ident2str r} },|]
   where
     ln = unpack (S.specName s)
 
@@ -96,7 +100,7 @@ prototypeBody s (S.Type { S.typeName = n, S.typeDesc = d }) =
   case d of
     S.Synonym { S.synonymRef = r }
       -> chompNewline [i|
-        .ref_index = type_index_#{ln}_#{ident2str r},|]
+        .ref_id = type_id_#{ln}_#{ident2str r},|]
     S.Range { S.rangeOffset = ro, S.rangeLength = rl, S.rangeTag = rt }
       -> chompNewline [i|
         .offset = #{ro},
@@ -104,11 +108,11 @@ prototypeBody s (S.Type { S.typeName = n, S.typeDesc = d }) =
         .tag = #{tagToTagEnumStr rt},|]
     S.Array { S.arrayRef = r, S.arrayLength = al }
       -> chompNewline [i|
-        .ref_index = type_index_#{ln}_#{ident2str r},
+        .ref_id = type_id_#{ln}_#{ident2str r},
         .length = #{al},|]
     S.Vector { S.vectorRef = r, S.vectorLength = vl }
       -> chompNewline [i|
-        .ref_index = type_index_#{ln}_#{ident2str r},
+        .ref_id = type_id_#{ln}_#{ident2str r},
         .max_length = #{vl},|]
     S.Enumeration { S.enumerationTag = et, S.enumerationValues = evs }
       -> chompNewline [i|

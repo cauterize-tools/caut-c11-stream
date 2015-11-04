@@ -5,10 +5,12 @@ import Cauterize.C11Stream.HFile
 import Cauterize.C11Stream.HTypes
 import Cauterize.C11Stream.HDescriptors
 import Cauterize.C11Stream.CDescriptors
+import Cauterize.C11Stream.StaticFiles
 import Data.Text (unpack)
 import System.Directory
 import System.FilePath.Posix
 import qualified Cauterize.Specification as S
+import qualified Data.ByteString as B
 
 main :: IO ()
 main = runWithOptions caut2c11
@@ -44,6 +46,12 @@ generateDynamicFiles path baseName spec = do
   writeFile (path `combine` (baseName ++ "_types.h")) (hTypesFromSpec spec)
   writeFile (path `combine` (baseName ++ "_descriptors.h")) (hDescriptorsFromSpec spec)
   writeFile (path `combine` (baseName ++ "_descriptors.c")) (cDescriptorsFromSpec spec)
+
+  mapM_ staticWrite allFiles
+
+  where
+    staticWrite (p,c) = B.writeFile (path `combine` p) c
+
 --  writeFile (path `combine` (baseName ++ ".c")) (cFileFromSpec spec)
 --  writeFile (path `combine` (baseName ++ "_message.h")) (hMessageFileFromSpec spec)
 --  writeFile (path `combine` (baseName ++ "_message.c")) (cMessageFileFromSpec spec)

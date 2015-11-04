@@ -20,7 +20,7 @@ hDescriptorsFromSpec s = unindent [i|
 
   #include <stdint.h>
 
-  #include "cauterize/type_descriptor.h"
+  #include "cauterize_descriptors.h"
 
   /* number of types */
   #define TYPE_COUNT_#{ln} (#{typeCount})
@@ -29,7 +29,7 @@ hDescriptorsFromSpec s = unindent [i|
 #{typeIndiciesEnum}
 
   /* an array of type descriptors */
-  extern struct type_descriptor type_descriptors[TYPE_COUNT_#{ln}];
+  extern struct type_descriptor const type_descriptors[TYPE_COUNT_#{ln}];
 
   #endif /* #{guardSym} */
 |]
@@ -40,7 +40,7 @@ hDescriptorsFromSpec s = unindent [i|
     typeCount = length types
 
     typeIndiciesEnum = chompNewline [i|
-  enum type_index_#{ln} {
+  enum type_id_#{ln} {
 #{typeIndicies}
   };
 |]
@@ -59,5 +59,5 @@ hDescriptorsFromSpec s = unindent [i|
             , (C.primToText C.PU16 , ( -2))
             , (C.primToText C.PU8  , ( -1))
             ]
-          fn (t, ix) = [i|    type_index_#{ln}_#{ident2str t} = #{ix},|]
+          fn (t, ix) = [i|    type_id_#{ln}_#{ident2str t} = #{ix},|]
       in intercalate "\n" $ map fn (prims ++ withIndex)
