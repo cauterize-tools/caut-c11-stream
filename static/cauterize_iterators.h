@@ -63,19 +63,33 @@ union caut_proto_iter {
     struct iter_union c_union;
 };
 
-struct type_iterator {
+struct type_encode_iterator {
+    void const * type;
     enum caut_proto_tag proto;
     union caut_proto_iter prototype;
 };
 
-enum caut_status type_iterator_init(
+struct type_decode_iterator {
+    void * type;
+    enum caut_proto_tag proto;
+    union caut_proto_iter prototype;
+};
+
+enum caut_status type_encode_iterator_init(
     struct schema_descriptor const * sd,
-    struct type_iterator * ti,
-    int type_id);
+    struct type_encode_iterator * ti,
+    int type_id,
+    void const * type);
+
+enum caut_status type_decode_iterator_init(
+    struct schema_descriptor const * sd,
+    struct type_decode_iterator * ti,
+    int type_id,
+    void * type);
 
 struct schema_encode_iterator {
     struct schema_descriptor const * desc;
-    struct type_iterator * iters;
+    struct type_encode_iterator * iters;
     size_t iter_count;
     size_t iter_top;
     int type_id;
@@ -84,7 +98,7 @@ struct schema_encode_iterator {
 
 struct schema_decode_iterator {
     struct schema_descriptor const * desc;
-    struct type_iterator * iters;
+    struct type_decode_iterator * iters;
     size_t iter_count;
     size_t iter_top;
     int type_id;
@@ -94,7 +108,7 @@ struct schema_decode_iterator {
 enum caut_status schema_encode_iterator_init(
     struct schema_encode_iterator * si,
     struct schema_descriptor const * sd,
-    struct type_iterator * ti,
+    struct type_encode_iterator * ti,
     size_t ti_count,
     int type_id,
     void const * src_type);
@@ -102,13 +116,17 @@ enum caut_status schema_encode_iterator_init(
 enum caut_status schema_decode_iterator_init(
     struct schema_decode_iterator * si,
     struct schema_descriptor const * sd,
-    struct type_iterator * ti,
+    struct type_decode_iterator * ti,
     size_t ti_count,
     int type_id,
     void * dst_type);
 
-enum caut_status get_type_iter(
+enum caut_status get_type_enc_iter(
     struct schema_encode_iterator const * ei,
-    struct type_iterator ** ti_out);
+    struct type_encode_iterator ** ti_out);
+
+enum caut_status get_type_dec_iter(
+    struct schema_decode_iterator const * ei,
+    struct type_decode_iterator ** ti_out);
 
 #endif /* CAUTERIZE_ITERATORS_H */

@@ -29,8 +29,10 @@ typedef uint32_t caut_tag32_t;
 typedef uint64_t caut_tag64_t;
 
 enum caut_status {
-    caut_status_ok,
-    caut_status_err,
+    caut_status_ok = 0,
+    caut_status_ok_busy,
+    caut_status_ok_pop,
+    caut_status_err = 1000,
     caut_status_err_invalid_type_id,
     caut_status_err_iter_stack_would_overflow,
     caut_status_err_UNIMPLEMENTED,
