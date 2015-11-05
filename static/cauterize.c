@@ -66,8 +66,13 @@ S caut_enc_get(SEI * ei, void * buf, size_t buf_size, size_t * enc_bytes) {
             printf("busy (%lu)\n", i);
             break;
         case caut_status_ok_pop:
-            printf("pop (%lu)\n", i);
-            return caut_status_ok;
+            if (ei->iter_top == 0) {
+                printf("done (%lu)\n", i);
+                return caut_status_ok;
+            } else {
+                printf("pop (%lu:%lu)\n", i, ei->iter_top);
+                ei->iter_top -= 1;
+            }
             break;
         default:
             printf("other (%lu:%d)\n", i, s);
