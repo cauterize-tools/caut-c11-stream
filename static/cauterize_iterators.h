@@ -2,6 +2,7 @@
 #define CAUTERIZE_ITERATORS_H
 
 #include "cauterize_types.h"
+#include "cauterize_descriptors.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -63,12 +64,14 @@ union caut_proto_iter {
 };
 
 struct type_iterator {
-    bool initialized;
     enum caut_proto_tag proto;
     union caut_proto_iter prototype;
 };
 
-void type_iterator_init(struct type_iterator * ti);
+enum caut_status type_iterator_init(
+    struct schema_descriptor const * sd,
+    struct type_iterator * ti,
+    int type_id);
 
 struct schema_encode_iterator {
     struct schema_descriptor const * desc;
@@ -104,5 +107,8 @@ enum caut_status schema_decode_iterator_init(
     int type_id,
     void * dst_type);
 
+enum caut_status get_type_iter(
+    struct schema_encode_iterator const * ei,
+    struct type_iterator ** ti_out);
 
 #endif /* CAUTERIZE_ITERATORS_H */

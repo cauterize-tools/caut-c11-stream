@@ -90,4 +90,13 @@ struct schema_descriptor {
 #define CAUT_PRIMITIVE_COUNT (11)
 extern struct type_descriptor const primitive_descriptors[CAUT_PRIMITIVE_COUNT];
 
+enum caut_status get_type_desc(
+    struct schema_descriptor const * sd_set,
+    int type_id,
+    struct type_descriptor const ** td_out);
+
+enum caut_status id_check(
+    struct schema_descriptor const * sd_set,
+    int type_id);
+
 #endif /* CAUTERIZE_DESCRIPTORS_H */

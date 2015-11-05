@@ -1,5 +1,11 @@
 #include "cauterize_descriptors.h"
 
+#include <stdlib.h>
+
+#define S enum caut_status
+#define SD struct schema_descriptor
+#define TD struct type_descriptor
+
 #define U8_ID (-1)
 #define U16_ID (-2)
 #define U32_ID (-3)
@@ -20,6 +26,8 @@
         .prototype.c_primitive = { .word_size = SIZE }, \
     }
 
+int const min_prim_id = -11; // bool
+
 struct type_descriptor const primitive_descriptors[CAUT_PRIMITIVE_COUNT] = {
     PROTO_DESC("u8", U8_ID, 1),
     PROTO_DESC("u16", U16_ID, 2),
@@ -33,3 +41,22 @@ struct type_descriptor const primitive_descriptors[CAUT_PRIMITIVE_COUNT] = {
     PROTO_DESC("f64", F64_ID, 8),
     PROTO_DESC("bool", BOOL_ID, 1),
 };
+
+S id_check(SD const * sd_set, int type_id) {
+    if ((min_prim_id <= type_id) || ((size_t)type_id <= sd_set->type_count)) {
+        return caut_status_ok;
+    } else {
+        return caut_status_err_invalid_type_id;
+    }
+}
+
+S get_type_desc(SD const * sd_set, int type_id, TD const ** td_out) {
+    if (0 > type_id) {
+        int prim_idx = abs(type_id) - 1;
+        *td_out = &primitive_descriptors[prim_idx];
+    } else if ((size_t)type_id < sd_set->type_count) {
+        *td_out = &sd_set->types[type_id];
+    }
+
+    return caut_status_ok;
+}

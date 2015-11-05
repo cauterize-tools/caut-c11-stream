@@ -15,8 +15,14 @@ cauterizeDotC = ("cauterize.c", $(embedFile "static/cauterize.c"))
 cauterizeTypesDotH :: (FilePath, B.ByteString)
 cauterizeTypesDotH = ("cauterize_types.h", $(embedFile "static/cauterize_types.h"))
 
+cauterizeUtilDotH :: (FilePath, B.ByteString)
+cauterizeUtilDotH = ("cauterize_util.h", $(embedFile "static/cauterize_util.h"))
+
 descriptorsDotH :: (FilePath, B.ByteString)
 descriptorsDotH = ("cauterize_descriptors.h", $(embedFile "static/cauterize_descriptors.h"))
+
+descriptorsDotC :: (FilePath, B.ByteString)
+descriptorsDotC = ("cauterize_descriptors.c", $(embedFile "static/cauterize_descriptors.c"))
 
 iteratorsDotH :: (FilePath, B.ByteString)
 iteratorsDotH = ("cauterize_iterators.h", $(embedFile "static/cauterize_iterators.h"))
@@ -29,7 +35,9 @@ allFiles =
   [ cauterizeDotH
   , cauterizeDotC
   , cauterizeTypesDotH
+  , cauterizeUtilDotH
   , descriptorsDotH
+  , descriptorsDotC
   , iteratorsDotH
   , iteratorsDotC
   ]

@@ -1,37 +1,30 @@
 #include "cauterize_iterators.h"
 #include "cauterize_descriptors.h"
+#include "cauterize_util.h"
 
 #include <string.h>
 #include <stdlib.h>
 
 #define S enum caut_status
 #define SD struct schema_descriptor
-#define EI struct schema_encode_iterator
-#define DI struct schema_decode_iterator
+#define SEI struct schema_encode_iterator
+#define SDI struct schema_decode_iterator
 #define TI struct type_iterator
 #define TD struct type_descriptor
 
-// return error if error
-#define RE(EXP) \
-    do { \
-        S s; if (caut_status_ok != (s = EXP)) {  \
-            return s; \
-        } \
-    } while(0)
+S type_iterator_init(SD const * sd, TI * ti, int type_id) {
+    RE(id_check(sd, type_id));
 
-int const min_prim_id = -11; // bool
+    struct type_descriptor const * td = NULL;
+    RE(get_type_desc(sd, type_id, &td));
 
-/* Check that the type_id represents a real type. */
-static S id_check(SD const * sd_set, int type_id);
-
-/* Get a type descriptor out of the schema descriptor. */
-static S get_desc(SD const * sd_set, int type_id, TD const ** sd_out);
-
-void type_iterator_init(TI * ti) {
     memset(ti, 0, sizeof(*ti));
+    ti->proto = td->prototype_tag;
+
+    return caut_status_err;
 }
 
-S schema_encode_iterator_init(EI * si, SD const * sd, TI * ti, size_t ti_count, int type_id, void const * src_type) {
+S schema_encode_iterator_init(SEI * si, SD const * sd, TI * ti, size_t ti_count, int type_id, void const * src_type) {
     RE(id_check(sd, type_id));
 
     si->desc = sd;
@@ -44,7 +37,7 @@ S schema_encode_iterator_init(EI * si, SD const * sd, TI * ti, size_t ti_count, 
     return caut_status_ok;
 }
 
-S schema_decode_iterator_init(DI * si, SD const * sd, TI * ti, size_t ti_count, int type_id, void * dst_type) {
+S schema_decode_iterator_init(SDI * si, SD const * sd, TI * ti, size_t ti_count, int type_id, void * dst_type) {
     RE(id_check(sd, type_id));
 
     si->desc = sd;
@@ -58,21 +51,11 @@ S schema_decode_iterator_init(DI * si, SD const * sd, TI * ti, size_t ti_count, 
     return caut_status_ok;
 }
 
-static S id_check(SD const * sd_set, int type_id) {
-    if ((min_prim_id <= type_id) || ((size_t)type_id <= sd_set->type_count)) {
+S get_type_iter(SEI const * ei, TI ** ti_out) {
+    if (ei->iter_top < ei->iter_count) {
+        *ti_out = &ei->iters[ei->iter_top];
         return caut_status_ok;
     } else {
-        return caut_status_err_invalid_type_id;
+        return caut_status_err_iter_stack_would_overflow;
     }
-}
-
-static S get_desc(SD const * sd_set, int type_id, TD const ** sd_out) {
-    if (0 > type_id) {
-        int prim_idx = abs(type_id) - 1;
-        *sd_out = &primitive_descriptors[prim_idx];
-    } else if ((size_t)type_id < sd_set->type_count) {
-        *sd_out = &sd_set->types[type_id];
-    }
-
-    return caut_status_ok;
 }
