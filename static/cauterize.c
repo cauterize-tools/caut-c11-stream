@@ -19,6 +19,7 @@
 #define SDI struct schema_decode_iterator
 
 static S caut_enc_get_byte(SEI * ei, uint8_t * byte);
+static S caut_enc_get_byte_primitive(TD const * td, TEI * ti, uint8_t * byte);
 
 static S caut_enc_get_byte(SEI * ei, uint8_t * byte) {
     TD const * td = NULL;
@@ -29,29 +30,31 @@ static S caut_enc_get_byte(SEI * ei, uint8_t * byte) {
 
     switch (td->prototype_tag) {
     case caut_proto_primitive:
-    {
-        struct iter_primitive * iter = &ti->prototype.c_primitive;
-        struct caut_primitive const * const desc = &td->prototype.c_primitive;
-        uint8_t const * const type_bytes = ti->type;
-
-        assert(type_bytes);
-        assert(iter->word_position < desc->word_size);
-
-        *byte = type_bytes[iter->word_position];
-        iter->word_position += 1;
-
-        if (iter->word_position >= desc->word_size) {
-            return caut_status_ok_pop;
-        } else {
-            return caut_status_ok_busy;
-        }
-        break;
-    }
+        return caut_enc_get_byte_primitive(td, ti, byte);
     default:
         return caut_status_err_UNIMPLEMENTED;
     }
 
 }
+
+static S caut_enc_get_byte_primitive(TD const * td, TEI * ti, uint8_t * byte) {
+    struct iter_primitive * iter = &ti->prototype.c_primitive;
+    struct caut_primitive const * const desc = &td->prototype.c_primitive;
+    uint8_t const * const type_bytes = ti->type;
+
+    assert(type_bytes);
+    assert(iter->word_position < desc->word_size);
+
+    *byte = type_bytes[iter->word_position];
+    iter->word_position += 1;
+
+    if (iter->word_position >= desc->word_size) {
+        return caut_status_ok_pop;
+    } else {
+        return caut_status_ok_busy;
+    }
+}
+
 
 S caut_enc_get(SEI * ei, void * buf, size_t buf_size, size_t * enc_bytes) {
     *enc_bytes = 0;
