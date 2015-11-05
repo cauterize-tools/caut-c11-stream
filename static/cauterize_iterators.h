@@ -64,12 +64,14 @@ union caut_proto_iter {
 };
 
 struct type_encode_iterator {
+    int type_id;
     void const * type;
     enum caut_proto_tag proto;
     union caut_proto_iter prototype;
 };
 
 struct type_decode_iterator {
+    int type_id;
     void * type;
     enum caut_proto_tag proto;
     union caut_proto_iter prototype;
@@ -128,5 +130,12 @@ enum caut_status get_type_enc_iter(
 enum caut_status get_type_dec_iter(
     struct schema_decode_iterator const * ei,
     struct type_decode_iterator ** ti_out);
+
+enum caut_status push_type_enc_iter(
+    struct schema_encode_iterator * ei,
+    struct type_encode_iterator ** ti_out,
+    int type_id,
+    void const * type_base);
+
 
 #endif /* CAUTERIZE_ITERATORS_H */

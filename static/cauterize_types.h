@@ -32,6 +32,7 @@ enum caut_status {
     caut_status_ok = 0,
     caut_status_ok_busy,
     caut_status_ok_pop,
+    caut_status_ok_pushed,
     caut_status_err = 1000,
     caut_status_err_invalid_type_id,
     caut_status_err_iter_stack_would_overflow,

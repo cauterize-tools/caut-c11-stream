@@ -23,6 +23,7 @@ S type_encode_iterator_init(SD const * sd, TEI * ti, int type_id, void const * t
 
     ti->proto = td->prototype_tag;
     ti->type = type;
+    ti->type_id = type_id;
 
     return caut_status_ok;
 }
@@ -36,6 +37,7 @@ S type_decode_iterator_init(SD const * sd, TDI * ti, int type_id, void * type) {
     memset(ti, 0, sizeof(*ti));
     ti->proto = td->prototype_tag;
     ti->type = type;
+    ti->type_id = type_id;
 
     return caut_status_ok;
 }
@@ -87,4 +89,12 @@ S get_type_dec_iter(SDI const * di, TDI ** ti_out) {
     } else {
         return caut_status_err_iter_stack_would_overflow;
     }
+}
+
+S push_type_enc_iter(SEI * ei, TEI ** ti_out, int type_id, void const * type_base) {
+    ei->iter_top += 1;
+    RE(get_type_enc_iter(ei, ti_out));
+    RE(type_encode_iterator_init(ei->desc, *ti_out, type_id, type_base));
+
+    return caut_status_ok;
 }
