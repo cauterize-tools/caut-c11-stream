@@ -30,6 +30,9 @@ iteratorsDotH = ("cauterize_iterators.h", $(embedFile "static/cauterize_iterator
 iteratorsDotC :: (FilePath, B.ByteString)
 iteratorsDotC = ("cauterize_iterators.c", $(embedFile "static/cauterize_iterators.c"))
 
+testMainDotC :: (FilePath, B.ByteString)
+testMainDotC = ("test_main.c", $(embedFile "static/test_main.c"))
+
 allFiles :: [(FilePath, B.ByteString)]
 allFiles =
   [ cauterizeDotH
@@ -40,4 +43,5 @@ allFiles =
   , descriptorsDotC
   , iteratorsDotH
   , iteratorsDotC
+  , testMainDotC
   ]
