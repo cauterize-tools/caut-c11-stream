@@ -22,6 +22,7 @@ static S caut_enc_get_byte(SEI * ei, uint8_t * byte);
 static S caut_enc_get_byte_primitive(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
 static S caut_enc_get_byte_synonym(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
 static S caut_enc_get_byte_range(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
+static S caut_enc_get_byte_enumeration(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
 
 static size_t caut_tag_size(enum caut_tag tag);
 
@@ -39,6 +40,8 @@ static S caut_enc_get_byte(SEI * ei, uint8_t * byte) {
         return caut_enc_get_byte_synonym(ei, td, ti, byte);
     case caut_proto_range:
         return caut_enc_get_byte_range(ei, td, ti, byte);
+    case caut_proto_enumeration:
+        return caut_enc_get_byte_enumeration(ei, td, ti, byte);
     default:
         return caut_status_err_UNIMPLEMENTED;
     }
@@ -119,12 +122,35 @@ static S caut_enc_get_byte_range(SEI * ei, TD const * td, TEI * ti, uint8_t * by
     *byte = word.b[iter->tag_iter.tag_position];
     iter->tag_iter.tag_position += 1;
 
-    printf("rbyte: %02X\n", *byte);
-
     if (iter->tag_iter.tag_position < caut_tag_size(desc->tag)) {
         return caut_status_ok_busy;
     } else {
         return caut_status_ok_pop;
+    }
+}
+
+static S caut_enc_get_byte_enumeration(SEI * ei, TD const * td, TEI * ti, uint8_t * byte) {
+    struct iter_enumeration * const iter = &ti->prototype.c_enumeration;
+    struct caut_enumeration const * const desc = &td->prototype.c_enumeration;
+
+    (void) ei;
+
+    assert(iter->tag_iter.tag_position < caut_tag_size(desc->tag));
+
+    uint64_t word = 0;
+    memcpy(&word, ti->type, caut_tag_size(desc->tag));
+
+    if (word >= desc->length) {
+        return caut_status_err_invalid_enum;
+    } else {
+        *byte = ((uint8_t *)&word)[iter->tag_iter.tag_position];
+        iter->tag_iter.tag_position += 1;
+
+        if (iter->tag_iter.tag_position < caut_tag_size(desc->tag)) {
+            return caut_status_ok_busy;
+        } else {
+            return caut_status_ok_pop;
+        }
     }
 }
 
@@ -150,20 +176,16 @@ S caut_enc_get(SEI * ei, void * buf, size_t buf_size, size_t * enc_bytes) {
 
         if (caut_status_ok_busy == s) {
             *i += 1;
-            printf("busy (%lu)\n", *i);
         } else if (caut_status_ok_pop == s) {
             *i += 1;
             if (ei->iter_top == 0) {
-                printf("done (%lu)\n", *i);
                 return caut_status_ok;
             } else {
-                printf("pop (%lu:%lu)\n", *i, ei->iter_top);
                 ei->iter_top -= 1;
             }
         } else if (caut_status_ok_pushed == s) {
-            printf("pushed (%lu)\n", *i);
+            // at the moment, do nothing. this might need to add a byte.
         } else {
-            printf("other (%lu:%d)\n", *i, s);
             return caut_status_err;
         }
     }

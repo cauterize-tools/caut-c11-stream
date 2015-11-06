@@ -32,7 +32,6 @@ struct caut_range {
 struct caut_enumeration {
     enum caut_tag tag;
     size_t length;
-    size_t size;
 };
 
 struct caut_array {

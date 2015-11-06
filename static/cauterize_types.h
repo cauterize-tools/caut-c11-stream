@@ -37,6 +37,7 @@ enum caut_status {
     caut_status_err_invalid_type_id,
     caut_status_err_iter_stack_would_overflow,
     caut_status_err_invalid_range,
+    caut_status_err_invalid_enum,
     caut_status_err_UNIMPLEMENTED,
 };
 
