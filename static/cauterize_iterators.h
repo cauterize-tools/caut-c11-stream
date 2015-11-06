@@ -94,7 +94,6 @@ struct schema_encode_iterator {
     struct type_encode_iterator * iters;
     size_t iter_count;
     size_t iter_top;
-    int type_id;
     void const * src_type;
 };
 
@@ -103,7 +102,6 @@ struct schema_decode_iterator {
     struct type_decode_iterator * iters;
     size_t iter_count;
     size_t iter_top;
-    int type_id;
     void * dst_type;
 };
 

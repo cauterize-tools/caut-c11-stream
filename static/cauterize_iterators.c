@@ -49,7 +49,6 @@ S schema_encode_iterator_init(SEI * si, SD const * sd, TEI * ti, size_t ti_count
     si->iters = ti;
     si->iter_count = ti_count;
     si->iter_top = 0;
-    si->type_id = type_id;
     si->src_type = src_type;
 
     RE(type_encode_iterator_init(sd, ti, type_id, src_type));
@@ -65,7 +64,6 @@ S schema_decode_iterator_init(SDI * si, SD const * sd, TDI * ti, size_t ti_count
     si->iter_count = ti_count;
     si->iter_top = 0;
     si->iters = ti;
-    si->type_id = type_id;
     si->dst_type = dst_type;
 
     RE(type_decode_iterator_init(sd, ti, type_id, dst_type));
