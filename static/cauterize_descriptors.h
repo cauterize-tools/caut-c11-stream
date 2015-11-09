@@ -44,6 +44,8 @@ struct caut_vector {
     enum caut_tag tag;
     int ref_id;
     size_t max_length;
+    size_t elem_span;
+    size_t elem_offset;
 };
 
 struct caut_record {

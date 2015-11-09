@@ -28,6 +28,7 @@ static S caut_enc_get_byte_synonym(SEI * ei, TD const * td, TEI * ti, uint8_t * 
 static S caut_enc_get_byte_range(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
 static S caut_enc_get_byte_enumeration(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
 static S caut_enc_get_byte_array(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
+static S caut_enc_get_byte_vector(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
 
 static size_t caut_tag_size(enum caut_tag tag);
 
@@ -49,6 +50,8 @@ static S caut_enc_get_byte(SEI * ei, uint8_t * byte) {
         return caut_enc_get_byte_enumeration(ei, td, ti, byte);
     case caut_proto_array:
         return caut_enc_get_byte_array(ei, td, ti, byte);
+    case caut_proto_vector:
+        return caut_enc_get_byte_vector(ei, td, ti, byte);
     default:
         return caut_status_err_UNIMPLEMENTED;
     }
@@ -166,10 +169,46 @@ static S caut_enc_get_byte_array(SEI * ei, TD const * td, TEI * ti, uint8_t * by
     (void) byte;
 
     if (iter->elem_position < desc->length) {
-        RE(push_type_enc_iter(ei, &new_ti, desc->ref_id, ti->type));
+        void const * base = ti->type + (desc->elem_span * iter->elem_position);
 
-        uintptr_t const type_ptr = (uintptr_t)ti->type + desc->elem_span;
-        ti->type = (void *)type_ptr;
+        RE(push_type_enc_iter(ei, &new_ti, desc->ref_id, base));
+        iter->elem_position += 1;
+
+        return caut_status_ok_pushed;
+    } else {
+        return caut_status_ok_pop;
+    }
+}
+
+static S caut_enc_get_byte_vector(SEI * ei, TD const * td, TEI * ti, uint8_t * byte) {
+    struct iter_vector * const iter = &ti->prototype.c_vector;
+    struct caut_vector const * const desc = &td->prototype.c_vector;
+
+    uint64_t word = 0;
+    memcpy(&word, ti->type, caut_tag_size(desc->tag));
+
+    if (iter->tag_iter.tag_position < caut_tag_size(desc->tag)) {
+        // still accumulating tag
+        uint64_t word = 0;
+        memcpy(&word, ti->type, caut_tag_size(desc->tag));
+
+        if (word > desc->max_length) {
+            return caut_status_err_invalid_vector;
+        }
+
+        *byte = ((uint8_t *)&word)[iter->tag_iter.tag_position];
+        iter->tag_iter.tag_position += 1;
+
+        return caut_status_ok_busy;
+    } else if (iter->elem_position < word) {
+        // accumulating elements
+        TEI * new_ti = NULL;
+        void const * base =
+            ti->type +
+            desc->elem_offset +
+            (iter->elem_position * desc->elem_span);
+
+        RE(push_type_enc_iter(ei, &new_ti, desc->ref_id, base));
         iter->elem_position += 1;
 
         return caut_status_ok_pushed;

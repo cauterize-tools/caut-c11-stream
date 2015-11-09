@@ -139,7 +139,9 @@ prototypeBody luDecl s (S.Type { S.typeName = n, S.typeDesc = d }) =
     S.Vector { S.vectorRef = r, S.vectorLength = vl }
       -> chompNewline [i|
         .ref_id = type_id_#{ln}_#{ident2str r},
-        .max_length = #{vl},|]
+        .max_length = #{vl},
+        .elem_span = ARR_ELEM_SPAN(#{luDecl r}),
+        .elem_offset = offsetof(struct #{ident2str n}, elems),|]
     S.Enumeration { S.enumerationTag = et, S.enumerationValues = evs }
       -> chompNewline [i|
         .tag = #{tagToTagEnumStr et},
