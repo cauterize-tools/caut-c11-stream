@@ -268,19 +268,27 @@ static size_t caut_tag_size(enum caut_tag tag) {
 }
 
 static void signed_promote(void const * in, size_t in_size, void * out, size_t out_size) {
+    // Assumes in and out are both properly aligned.
+
     assert(in_size <= out_size);
     assert(in_size == 1 || in_size == 2 || in_size == 4 || in_size == 8);
     assert(out_size == 1 || out_size == 2 || out_size == 4 || out_size == 8);
 
-    uint64_t word_in = 0;
+    int64_t word = 0;
 
-    memcpy(&word_in, in, in_size);
-
-    if (word_in & (1 << ((in_size * 8) - 1))) {
-        memset(out, 0xFF, out_size);
+    switch (in_size) {
+    case sizeof(int8_t):  word = *(int8_t  *)in; break;
+    case sizeof(int16_t): word = *(int16_t *)in; break;
+    case sizeof(int32_t): word = *(int32_t *)in; break;
+    case sizeof(int64_t): word = *(int64_t *)in; break;
     }
 
-    memcpy(out, in, in_size);
+    switch(out_size) {
+    case sizeof(int8_t):  *((int8_t  *)out) = (int8_t )word; break;
+    case sizeof(int16_t): *((int16_t *)out) = (int16_t)word; break;
+    case sizeof(int32_t): *((int32_t *)out) = (int32_t)word; break;
+    case sizeof(int64_t): *((int64_t *)out) = (int64_t)word; break;
+    }
 }
 
 S caut_enc_get(SEI * ei, void * buf, size_t buf_size, size_t * enc_bytes) {
