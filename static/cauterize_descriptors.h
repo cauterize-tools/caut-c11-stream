@@ -37,6 +37,7 @@ struct caut_enumeration {
 struct caut_array {
     int ref_id;
     size_t length;
+    size_t elem_span;
 };
 
 struct caut_vector {

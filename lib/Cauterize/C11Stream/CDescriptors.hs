@@ -11,6 +11,7 @@ import Data.Text (unpack)
 import Data.List (intercalate)
 import Data.Maybe
 
+import qualified Data.Map as M
 import qualified Cauterize.Specification as S
 import qualified Cauterize.CommonTypes as C
 
@@ -24,6 +25,11 @@ cDescriptorsFromSpec s = unindent [i|
   #include <stdbool.h>
   #include <stdint.h>
   #include <stddef.h>
+
+  #define ARR_ELEM_SPAN(TYPE) \\
+    (uintptr_t)&(((TYPE *)NULL)[1])
+
+
 
 #{fieldSets s types}
 
@@ -40,6 +46,14 @@ cDescriptorsFromSpec s = unindent [i|
     types = S.specTypes s
     descriptorList = intercalate "\n" $ map descriptor types
 
+    -- Names to how you delcare that name
+    n2declMap = let s' = S.specTypes s
+                    d = map t2decl s'
+                    n = fmap S.typeName s'
+                in primDeclMap `M.union` M.fromList (zip n d)
+    luDecl n = fromMaybe (error $ "Invalid name: " ++ unpack (C.unIdentifier n) ++ ".")
+                         (M.lookup n n2declMap)
+
     descriptor t =
       let n = ident2str (S.typeName t)
           tps = typeToPrimString t
@@ -49,7 +63,7 @@ cDescriptorsFromSpec s = unindent [i|
       .type_id = type_id_#{ln}_#{n},
       .prototype_tag = caut_proto_#{tps},
       .prototype.c_#{tps} = {
-#{prototypeBody s t}
+#{prototypeBody luDecl s t}
       },
     },|]
 
@@ -105,8 +119,8 @@ prototypeField s typeName S.DataField { S.fieldName = n, S.fieldIndex = ix, S.fi
     r' = ident2str r
 
 
-prototypeBody :: S.Specification -> S.Type -> String
-prototypeBody s (S.Type { S.typeName = n, S.typeDesc = d }) =
+prototypeBody :: (C.Identifier -> String) -> S.Specification -> S.Type -> String
+prototypeBody luDecl s (S.Type { S.typeName = n, S.typeDesc = d }) =
   case d of
     S.Synonym { S.synonymRef = r }
       -> chompNewline [i|
@@ -120,7 +134,8 @@ prototypeBody s (S.Type { S.typeName = n, S.typeDesc = d }) =
     S.Array { S.arrayRef = r, S.arrayLength = al }
       -> chompNewline [i|
         .ref_id = type_id_#{ln}_#{ident2str r},
-        .length = #{al},|]
+        .length = #{al},
+        .elem_span = ARR_ELEM_SPAN(#{luDecl r}),|]
     S.Vector { S.vectorRef = r, S.vectorLength = vl }
       -> chompNewline [i|
         .ref_id = type_id_#{ln}_#{ident2str r},
