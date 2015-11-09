@@ -28,17 +28,20 @@ typedef uint16_t caut_tag16_t;
 typedef uint32_t caut_tag32_t;
 typedef uint64_t caut_tag64_t;
 
+#define ERRS_START (1000)
+
 enum caut_status {
     caut_status_ok = 0,
     caut_status_ok_busy,
     caut_status_ok_pop,
     caut_status_ok_pushed,
-    caut_status_err = 1000,
+    caut_status_err = ERRS_START,
     caut_status_err_invalid_type_id,
     caut_status_err_iter_stack_would_overflow,
     caut_status_err_invalid_range,
     caut_status_err_invalid_enum,
     caut_status_err_invalid_vector,
+    caut_status_err_invalid_record,
     caut_status_err_UNIMPLEMENTED,
 };
 

@@ -20,6 +20,10 @@
 
 #ifndef NDEBUG
 #define DEBUG_CHAR(c) putchar(c)
+#define DEBUG_FMT(fmt, ...) printf(fmt, __VA_ARGS__)
+#else
+#define DEBUG_CHAR(c)
+#define DEBUG_FMT(fmt, ...)
 #endif
 
 static S caut_enc_get_byte(SEI * ei, uint8_t * byte);
@@ -29,8 +33,10 @@ static S caut_enc_get_byte_range(SEI * ei, TD const * td, TEI * ti, uint8_t * by
 static S caut_enc_get_byte_enumeration(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
 static S caut_enc_get_byte_array(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
 static S caut_enc_get_byte_vector(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
+static S caut_enc_get_byte_record(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
 
 static size_t caut_tag_size(enum caut_tag tag);
+static void signed_promote(void const * in, size_t in_size, void * out, size_t out_size);
 
 static S caut_enc_get_byte(SEI * ei, uint8_t * byte) {
     TD const * td = NULL;
@@ -52,6 +58,8 @@ static S caut_enc_get_byte(SEI * ei, uint8_t * byte) {
         return caut_enc_get_byte_array(ei, td, ti, byte);
     case caut_proto_vector:
         return caut_enc_get_byte_vector(ei, td, ti, byte);
+    case caut_proto_record:
+        return caut_enc_get_byte_record(ei, td, ti, byte);
     default:
         return caut_status_err_UNIMPLEMENTED;
     }
@@ -101,35 +109,41 @@ static S caut_enc_get_byte_range(SEI * ei, TD const * td, TEI * ti, uint8_t * by
     (void) ei;
 
     if (iter->tag_iter.tag_position < caut_tag_size(desc->tag)) {
-        union {
-            uint64_t u;
-            int64_t s;
-            uint8_t b[sizeof(uint64_t)];
-        } word = { .u = 0 };
-
-        memcpy(&word, ti->type, desc->word_size);
+        uint8_t * b = NULL;
 
         if (desc->offset < 0) {
             int64_t const rmin = desc->offset;
             int64_t const rmax = desc->offset + desc->length;
 
-            if (word.s < rmin || rmax < word.s) {
+            int64_t s = 0;
+            signed_promote(ti->type, desc->word_size, &s, sizeof(s));
+
+            if (s < rmin || rmax < s) {
                 return caut_status_err_invalid_range;
             } else {
-                word.s -= desc->offset;
+                s -= desc->offset;
             }
+
+            b = (uint8_t *) &s;
         } else {
             uint64_t const rmin = desc->offset;
             uint64_t const rmax = desc->offset + desc->length;
 
-            if (word.u < rmin || rmax < word.u) {
+            uint64_t u = 0;
+            memcpy(&u, ti->type, desc->word_size);
+
+            if (u < rmin || rmax < u) {
                 return caut_status_err_invalid_range;
             } else {
-                word.u -= (uint64_t)desc->offset;
+                u -= (uint64_t)desc->offset;
             }
+
+            b = (uint8_t *) &u;
         }
 
-        *byte = word.b[iter->tag_iter.tag_position];
+        assert(b);
+
+        *byte = b[iter->tag_iter.tag_position];
         iter->tag_iter.tag_position += 1;
 
         return caut_status_ok_busy;
@@ -217,6 +231,30 @@ static S caut_enc_get_byte_vector(SEI * ei, TD const * td, TEI * ti, uint8_t * b
     }
 }
 
+static S caut_enc_get_byte_record(SEI * ei, TD const * td, TEI * ti, uint8_t * byte) {
+    struct iter_record * const iter = &ti->prototype.c_record;
+    struct caut_record const * const desc = &td->prototype.c_record;
+
+    (void) byte;
+
+    if (iter->field_position < desc->field_count) {
+        struct caut_field const * const field = &desc->fields[iter->field_position];
+        TEI * new_ti = NULL;
+        void const * base = ti->type + field->offset;
+
+        if (field->data == false) {
+            return caut_status_err_invalid_record;
+        } else {
+            RE(push_type_enc_iter(ei, &new_ti, field->ref_id, base));
+            iter->field_position += 1;
+        }
+
+        return caut_status_ok_pushed;
+    } else {
+        return caut_status_ok_pop;
+    }
+}
+
 static size_t caut_tag_size(enum caut_tag tag) {
     switch (tag) {
     case caut_tag_8: return 1;
@@ -227,6 +265,22 @@ static size_t caut_tag_size(enum caut_tag tag) {
         assert(false);
         return 0;
     }
+}
+
+static void signed_promote(void const * in, size_t in_size, void * out, size_t out_size) {
+    assert(in_size <= out_size);
+    assert(in_size == 1 || in_size == 2 || in_size == 4 || in_size == 8);
+    assert(out_size == 1 || out_size == 2 || out_size == 4 || out_size == 8);
+
+    uint64_t word_in = 0;
+
+    memcpy(&word_in, in, in_size);
+
+    if (word_in & (1 << ((in_size * 8) - 1))) {
+        memset(out, 0xFF, out_size);
+    }
+
+    memcpy(out, in, in_size);
 }
 
 S caut_enc_get(SEI * ei, void * buf, size_t buf_size, size_t * enc_bytes) {
@@ -254,15 +308,15 @@ S caut_enc_get(SEI * ei, void * buf, size_t buf_size, size_t * enc_bytes) {
             }
         } else if (caut_status_ok_pushed == s) {
             DEBUG_CHAR('+');
-            // at the moment, do nothing. this might need to add a byte.
         } else {
+            assert(s >= ERRS_START);
             DEBUG_CHAR('!');
-            ret = caut_status_err;
+            ret = s;
             break;
         }
     }
 
-    DEBUG_CHAR('\n');
+    DEBUG_FMT("\nret = %d\n", ret);
 
     return ret;
 }
