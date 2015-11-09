@@ -281,6 +281,7 @@ static void signed_promote(void const * in, size_t in_size, void * out, size_t o
     case sizeof(int16_t): word = *(int16_t *)in; break;
     case sizeof(int32_t): word = *(int32_t *)in; break;
     case sizeof(int64_t): word = *(int64_t *)in; break;
+    default: assert(false);
     }
 
     switch(out_size) {
@@ -288,6 +289,7 @@ static void signed_promote(void const * in, size_t in_size, void * out, size_t o
     case sizeof(int16_t): *((int16_t *)out) = (int16_t)word; break;
     case sizeof(int32_t): *((int32_t *)out) = (int32_t)word; break;
     case sizeof(int64_t): *((int64_t *)out) = (int64_t)word; break;
+    default: assert(false);
     }
 }
 
