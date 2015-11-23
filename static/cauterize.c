@@ -34,6 +34,7 @@ static S caut_enc_get_byte_enumeration(SEI * ei, TD const * td, TEI * ti, uint8_
 static S caut_enc_get_byte_array(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
 static S caut_enc_get_byte_vector(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
 static S caut_enc_get_byte_record(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
+static S caut_enc_get_byte_combination(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
 
 static size_t caut_tag_size(enum caut_tag tag);
 static void signed_promote(void const * in, size_t in_size, void * out, size_t out_size);
@@ -60,6 +61,8 @@ static S caut_enc_get_byte(SEI * ei, uint8_t * byte) {
         return caut_enc_get_byte_vector(ei, td, ti, byte);
     case caut_proto_record:
         return caut_enc_get_byte_record(ei, td, ti, byte);
+    case caut_proto_combination:
+        return caut_enc_get_byte_combination(ei, td, ti, byte);
     default:
         return caut_status_err_UNIMPLEMENTED;
     }
@@ -203,9 +206,6 @@ static S caut_enc_get_byte_vector(SEI * ei, TD const * td, TEI * ti, uint8_t * b
 
     if (iter->tag_iter.tag_position < caut_tag_size(desc->tag)) {
         // still accumulating tag
-        uint64_t word = 0;
-        memcpy(&word, ti->type, caut_tag_size(desc->tag));
-
         if (word > desc->max_length) {
             return caut_status_err_invalid_vector;
         }
@@ -251,6 +251,47 @@ static S caut_enc_get_byte_record(SEI * ei, TD const * td, TEI * ti, uint8_t * b
 
         return caut_status_ok_pushed;
     } else {
+        return caut_status_ok_pop;
+    }
+}
+
+static S caut_enc_get_byte_combination(SEI * ei, TD const * td, TEI * ti, uint8_t * byte) {
+    struct iter_combination * const iter = &ti->prototype.c_combination;
+    struct caut_combination const * const desc = &td->prototype.c_combination;
+
+    uint64_t word = 0;
+    memcpy(&word, ti->type, caut_tag_size(desc->tag));
+
+    if (iter->tag_iter.tag_position < caut_tag_size(desc->tag)) {
+        // still accumulating tag
+        if (word > ((1 << desc->field_count) - 1)) {
+            printf("word: %llX, field_count: %llu\n", word, desc->field_count);
+            return caut_status_err_invalid_combination;
+        }
+
+        *byte = ((uint8_t *)&word)[iter->tag_iter.tag_position];
+        iter->tag_iter.tag_position += 1;
+
+        return caut_status_ok_busy;
+    } else {
+        while (iter->field_position < desc->field_count) {
+            uint64_t const field_flag = 1 << iter->field_position;
+
+            if (0 == (field_flag & word)) {
+                iter->field_position += 1;
+                continue;
+            } else {
+                struct caut_field const * const field = &desc->fields[iter->field_position];
+                void const * base = ti->type + field->offset;
+                TEI * new_ti = NULL;
+
+                RE(push_type_enc_iter(ei, &new_ti, field->ref_id, base));
+                iter->field_position += 1;
+
+                return caut_status_ok_pushed;
+            }
+        }
+
         return caut_status_ok_pop;
     }
 }
