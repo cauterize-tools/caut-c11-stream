@@ -43,6 +43,7 @@ enum caut_status {
     caut_status_err_invalid_vector,
     caut_status_err_invalid_record,
     caut_status_err_invalid_combination,
+    caut_status_err_invalid_union,
     caut_status_err_UNIMPLEMENTED,
 };
 

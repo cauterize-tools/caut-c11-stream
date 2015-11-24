@@ -49,6 +49,7 @@ struct iter_combination {
 
 struct iter_union {
     struct tag_iter tag_iter;
+    bool field_done;
 };
 
 union caut_proto_iter {

@@ -35,6 +35,7 @@ static S caut_enc_get_byte_array(SEI * ei, TD const * td, TEI * ti, uint8_t * by
 static S caut_enc_get_byte_vector(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
 static S caut_enc_get_byte_record(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
 static S caut_enc_get_byte_combination(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
+static S caut_enc_get_byte_union(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
 
 static size_t caut_tag_size(enum caut_tag tag);
 static void signed_promote(void const * in, size_t in_size, void * out, size_t out_size);
@@ -63,6 +64,8 @@ static S caut_enc_get_byte(SEI * ei, uint8_t * byte) {
         return caut_enc_get_byte_record(ei, td, ti, byte);
     case caut_proto_combination:
         return caut_enc_get_byte_combination(ei, td, ti, byte);
+    case caut_proto_union:
+        return caut_enc_get_byte_union(ei, td, ti, byte);
     default:
         return caut_status_err_UNIMPLEMENTED;
     }
@@ -265,7 +268,6 @@ static S caut_enc_get_byte_combination(SEI * ei, TD const * td, TEI * ti, uint8_
     if (iter->tag_iter.tag_position < caut_tag_size(desc->tag)) {
         // still accumulating tag
         if (word > ((1 << desc->field_count) - 1)) {
-            printf("word: %llX, field_count: %llu\n", word, desc->field_count);
             return caut_status_err_invalid_combination;
         }
 
@@ -285,14 +287,51 @@ static S caut_enc_get_byte_combination(SEI * ei, TD const * td, TEI * ti, uint8_
                 void const * base = ti->type + field->offset;
                 TEI * new_ti = NULL;
 
-                RE(push_type_enc_iter(ei, &new_ti, field->ref_id, base));
                 iter->field_position += 1;
 
-                return caut_status_ok_pushed;
+                if (field->data) {
+                    RE(push_type_enc_iter(ei, &new_ti, field->ref_id, base));
+                    return caut_status_ok_pushed;
+                } else {
+                    continue;
+                }
             }
         }
 
         return caut_status_ok_pop;
+    }
+}
+
+static S caut_enc_get_byte_union(SEI * ei, TD const * td, TEI * ti, uint8_t * byte) {
+    struct iter_union * const iter = &ti->prototype.c_union;
+    struct caut_union const * const desc = &td->prototype.c_union;
+
+    uint64_t word = 0;
+    memcpy(&word, ti->type, caut_tag_size(desc->tag));
+
+    if (iter->tag_iter.tag_position < caut_tag_size(desc->tag)) {
+        // still accumulating tag
+        if (word > desc->field_count) {
+            return caut_status_err_invalid_union;
+        }
+
+        *byte = ((uint8_t *)&word)[iter->tag_iter.tag_position];
+        iter->tag_iter.tag_position += 1;
+
+        return caut_status_ok_busy;
+    } else {
+        struct caut_field const * const field = &desc->fields[word];
+        void const * base = ti->type + field->offset;
+        TEI * new_ti = NULL;
+
+        if (iter->field_done || !field->data) {
+            return caut_status_ok_pop;
+        } else {
+            RE(push_type_enc_iter(ei, &new_ti, field->ref_id, base));
+            iter->field_done = true;
+
+            return caut_status_ok_pushed;
+        }
     }
 }
 
