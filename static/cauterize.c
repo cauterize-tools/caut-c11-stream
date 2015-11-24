@@ -378,7 +378,7 @@ S caut_enc_get(SEI * ei, void * buf, size_t buf_size, size_t * enc_bytes) {
 
     *enc_bytes = 0;
 
-    DEBUG_CHAR('+');
+    DEBUG_CHAR('(');
 
     size_t * i = enc_bytes;
     while (*i < buf_size) {
@@ -389,7 +389,7 @@ S caut_enc_get(SEI * ei, void * buf, size_t buf_size, size_t * enc_bytes) {
             DEBUG_CHAR('.');
             *i += 1;
         } else if (caut_status_ok_pop == s) {
-            DEBUG_CHAR('-');
+            DEBUG_CHAR(')');
             if (ei->iter_top == 0) {
                 ret = caut_status_ok;
                 break;
@@ -397,7 +397,7 @@ S caut_enc_get(SEI * ei, void * buf, size_t buf_size, size_t * enc_bytes) {
                 ei->iter_top -= 1;
             }
         } else if (caut_status_ok_pushed == s) {
-            DEBUG_CHAR('+');
+            DEBUG_CHAR('(');
         } else {
             assert(s >= ERRS_START);
             DEBUG_CHAR('!');
