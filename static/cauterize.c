@@ -37,6 +37,9 @@ static S caut_enc_get_byte_record(SEI * ei, TD const * td, TEI * ti, uint8_t * b
 static S caut_enc_get_byte_combination(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
 static S caut_enc_get_byte_union(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
 
+static S caut_dec_put_byte(SDI * di, uint8_t const * byte);
+static S caut_dec_put_byte_primitive(SDI * di, TD const * td, TDI * ti, uint8_t const * byte);
+
 static size_t caut_tag_size(enum caut_tag tag);
 static void signed_promote(void const * in, size_t in_size, void * out, size_t out_size);
 
@@ -69,7 +72,6 @@ static S caut_enc_get_byte(SEI * ei, uint8_t * byte) {
     default:
         return caut_status_err_UNIMPLEMENTED;
     }
-
 }
 
 static S caut_enc_get_byte_primitive(SEI * ei, TD const * td, TEI * ti, uint8_t * byte) {
@@ -335,6 +337,58 @@ static S caut_enc_get_byte_union(SEI * ei, TD const * td, TEI * ti, uint8_t * by
     }
 }
 
+static S caut_dec_put_byte(SDI * di, uint8_t const * byte) {
+    TD const * td = NULL;
+    TDI * ti = NULL;
+
+    RE(get_type_dec_iter(di, &ti));
+    RE(get_type_desc(di->desc, ti->type_id, &td));
+
+    switch (td->prototype_tag) {
+    case caut_proto_primitive:
+        return caut_dec_put_byte_primitive(di, td, ti, byte);
+    default:
+        return caut_status_err_UNIMPLEMENTED;
+#if 0
+    case caut_proto_synonym:
+        return caut_enc_get_byte_synonym(ei, td, ti, byte);
+    case caut_proto_range:
+        return caut_enc_get_byte_range(ei, td, ti, byte);
+    case caut_proto_enumeration:
+        return caut_enc_get_byte_enumeration(ei, td, ti, byte);
+    case caut_proto_array:
+        return caut_enc_get_byte_array(ei, td, ti, byte);
+    case caut_proto_vector:
+        return caut_enc_get_byte_vector(ei, td, ti, byte);
+    case caut_proto_record:
+        return caut_enc_get_byte_record(ei, td, ti, byte);
+    case caut_proto_combination:
+        return caut_enc_get_byte_combination(ei, td, ti, byte);
+    case caut_proto_union:
+        return caut_enc_get_byte_union(ei, td, ti, byte);
+#endif
+    }
+}
+
+static S caut_dec_put_byte_primitive(SDI * di, TD const * td, TDI * ti, uint8_t const * byte) {
+    struct iter_primitive * iter = &ti->prototype.c_primitive;
+    struct caut_primitive const * const desc = &td->prototype.c_primitive;
+    uint8_t * const type_bytes = ti->type;
+
+    (void) di;
+
+    assert(type_bytes);
+
+    if (iter->word_position < desc->word_size) {
+        type_bytes[iter->word_position] = *byte;
+        iter->word_position += 1;
+
+        return caut_status_ok_busy;
+    } else {
+        return caut_status_ok_pop;
+    }
+}
+
 static size_t caut_tag_size(enum caut_tag tag) {
     switch (tag) {
     case caut_tag_8: return 1;
@@ -412,6 +466,40 @@ S caut_enc_get(SEI * ei, void * buf, size_t buf_size, size_t * enc_bytes) {
 }
 
 S caut_dec_put(SDI * di, void const * buf, size_t buf_size, size_t * dec_bytes) {
-    (void)di; (void)buf; (void)buf_size; (void)dec_bytes;
-    return caut_status_err_invalid_type_id;
+    S ret = caut_status_ok_busy;
+
+    *dec_bytes = 0;
+
+    DEBUG_CHAR('(');
+
+    size_t * i = dec_bytes;
+
+    while (*i < buf_size) {
+        uint8_t const * const bytes = buf;
+        S const s = caut_dec_put_byte(di, &bytes[*i]);
+
+        if (caut_status_ok_busy == s) {
+            DEBUG_CHAR('.');
+            *i += 1;
+        } else if (caut_status_ok_pop == s) {
+            DEBUG_CHAR(')');
+            if (di->iter_top == 0) {
+                ret = caut_status_ok;
+                break;
+            } else {
+                di->iter_top -= 1;
+            }
+        } else if (caut_status_ok_pushed == s) {
+            DEBUG_CHAR('(');
+        } else {
+            assert(s >= ERRS_START);
+            DEBUG_CHAR('!');
+            ret = s;
+            break;
+        }
+    }
+
+    DEBUG_FMT("\nret = %d\n", ret);
+
+    return ret;
 }
