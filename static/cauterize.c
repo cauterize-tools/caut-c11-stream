@@ -341,6 +341,12 @@ static S caut_enc_get_byte_union(SEI * ei, TD const * td, TEI * ti, uint8_t * by
 }
 
 static S caut_dec_put_byte(SDI * di, uint8_t const * byte, bool * progress) {
+    /* The parameter `byte` can be NULL. If it's not null, copy it
+     * into the decoding structure. If it is null, pushing and popping
+     * of the stack are allowed, but nothing else. If a byte is needed
+     * to make progress, `caut_status_err_need_byte` must be returned
+     * until a byte is provided. */
+
     TD const * td = NULL;
     TDI * ti = NULL;
     *progress = false;
