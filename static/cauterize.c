@@ -44,9 +44,10 @@ static S caut_enc_get_byte_union(SEI * ei, TD const * td, TEI * ti, uint8_t * by
 static S caut_dec_put_byte(SDI * di, uint8_t const * byte, bool * progress);
 static S caut_dec_put_byte_primitive(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte);
 static S caut_dec_put_byte_synonym(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte);
+static S caut_dec_put_byte_range(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte);
 
 static size_t caut_tag_size(enum caut_tag tag);
-static void signed_promote(void const * in, size_t in_size, void * out, size_t out_size);
+static void signed_convert(void const * in, size_t in_size, void * out, size_t out_size);
 
 static S caut_enc_get_byte(SEI * ei, uint8_t * byte) {
     TD const * td = NULL;
@@ -127,7 +128,7 @@ static S caut_enc_get_byte_range(SEI * ei, TD const * td, TEI * ti, uint8_t * by
             int64_t const rmax = desc->offset + desc->length;
 
             int64_t s = 0;
-            signed_promote(ti->type, desc->word_size, &s, sizeof(s));
+            signed_convert(ti->type, desc->word_size, &s, sizeof(s));
 
             if (s < rmin || rmax < s) {
                 return caut_status_err_invalid_range;
@@ -359,11 +360,11 @@ static S caut_dec_put_byte(SDI * di, uint8_t const * byte, bool * progress) {
         return caut_dec_put_byte_primitive(di, td, ti, progress, byte);
     case caut_proto_synonym:
         return caut_dec_put_byte_synonym(di, td, ti, progress, byte);
+    case caut_proto_range:
+        return caut_dec_put_byte_range(di, td, ti, progress, byte);
     default:
         return caut_status_err_UNIMPLEMENTED;
 #if 0
-   case caut_proto_range:
-        return caut_enc_get_byte_range(ei, td, ti, byte);
     case caut_proto_enumeration:
         return caut_enc_get_byte_enumeration(ei, td, ti, byte);
     case caut_proto_array:
@@ -424,6 +425,61 @@ static S caut_dec_put_byte_synonym(SDI * di, TD const * td, TDI * ti, bool * pro
     }
 }
 
+static S caut_dec_put_byte_range(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte) {
+    struct iter_range * const iter = &ti->prototype.c_range;
+    struct caut_range const * const desc = &td->prototype.c_range;
+
+    (void) di;
+
+    if (iter->tag_iter.tag_position < caut_tag_size(desc->tag)) {
+        uint8_t * b = &iter->tag_iter.tag_buffer;
+
+        if (NULL == byte) {
+            return caut_status_err_need_byte;
+        } else {
+            b[iter->tag_iter.tag_position] = *byte;
+        }
+    } else {
+        if (desc->offset < 0) {
+            int64_t const rmin = desc->offset;
+            int64_t const rmax = desc->offset + desc->length;
+            int64_t s = 0;
+
+            signed_convert(
+                &iter->tag_iter.tag_buffer,
+                caut_tag_size(desc->tag),
+                &s, sizeof(s));
+
+            s += desc->offset;
+
+            if (s < rmin || rmax < s) {
+                return caut_status_err_invalid_range;
+            } else {
+                signed_convert(
+                    &s, sizeof(s),
+                    ti->type,
+                    desc->word_size);
+
+                return caut_status_ok_pop;
+            }
+        } else {
+            uint64_t const rmin = desc->offset;
+            uint64_t const rmax = desc->offset + desc->length;
+
+            uint64_t u = 0;
+            memcpy(&u, &iter->tag_iter.tag_buffer, caut_tag_size(desc->tag));
+
+            if (u < rmin || rmax < u) {
+                return caut_status_err_invalid_range;
+            } else {
+                memcpy(ti->type, &u, desc->word_size);
+
+                return caut_status_ok_pop;
+            }
+        }
+    }
+}
+
 static size_t caut_tag_size(enum caut_tag tag) {
     switch (tag) {
     case caut_tag_8: return 1;
@@ -436,10 +492,9 @@ static size_t caut_tag_size(enum caut_tag tag) {
     }
 }
 
-static void signed_promote(void const * in, size_t in_size, void * out, size_t out_size) {
+static void signed_convert(void const * in, size_t in_size, void * out, size_t out_size) {
     // Assumes in and out are both properly aligned.
 
-    assert(in_size <= out_size);
     assert(in_size == 1 || in_size == 2 || in_size == 4 || in_size == 8);
     assert(out_size == 1 || out_size == 2 || out_size == 4 || out_size == 8);
 
@@ -454,11 +509,24 @@ static void signed_promote(void const * in, size_t in_size, void * out, size_t o
     }
 
     switch(out_size) {
-    case sizeof(int8_t):  *((int8_t  *)out) = (int8_t )word; break;
-    case sizeof(int16_t): *((int16_t *)out) = (int16_t)word; break;
-    case sizeof(int32_t): *((int32_t *)out) = (int32_t)word; break;
-    case sizeof(int64_t): *((int64_t *)out) = (int64_t)word; break;
-    default: assert(false);
+    case sizeof(int8_t):
+        assert(INT8_MIN <= word && word <= INT8_MAX);
+        *((int8_t  *)out) = (int8_t )word;
+        break;
+    case sizeof(int16_t):
+        assert(INT16_MIN <= word && word <= INT16_MAX);
+        *((int16_t *)out) = (int16_t)word;
+        break;
+    case sizeof(int32_t):
+        assert(INT32_MIN <= word && word <= INT32_MAX);
+        *((int32_t *)out) = (int32_t)word;
+        break;
+    case sizeof(int64_t):
+        assert(INT64_MIN <= word && word <= INT64_MAX);
+        *((int64_t *)out) = (int64_t)word;
+        break;
+    default:
+        assert(false);
     }
 }
 
