@@ -96,3 +96,11 @@ S push_type_enc_iter(SEI * ei, TEI ** ti_out, int type_id, void const * type_bas
 
     return caut_status_ok;
 }
+
+S push_type_dec_iter(SDI * di, TDI ** ti_out, int type_id, void * type_base) {
+    di->iter_top += 1;
+    RE(get_type_dec_iter(di, ti_out));
+    RE(type_decode_iterator_init(di->desc, *ti_out, type_id, type_base));
+
+    return caut_status_ok;
+}

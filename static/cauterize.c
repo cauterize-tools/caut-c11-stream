@@ -20,11 +20,15 @@
 
 #ifndef NDEBUG
 #define DEBUG_CHAR(c) putchar(c)
+#define DEBUG_CHAR_IF(cond, c) do { if (cond) { putchar(c); } } while (0)
 #define DEBUG_FMT(fmt, ...) printf(fmt, __VA_ARGS__)
 #else
 #define DEBUG_CHAR(c)
+#define DEBUG_CHAR_IF(cond, c)
 #define DEBUG_FMT(fmt, ...)
 #endif
+
+#define STATE_CHECK(cond) do { if (!(cond)) { return caut_status_err_bad_state; } } while (0)
 
 static S caut_enc_get_byte(SEI * ei, uint8_t * byte);
 static S caut_enc_get_byte_primitive(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
@@ -37,8 +41,9 @@ static S caut_enc_get_byte_record(SEI * ei, TD const * td, TEI * ti, uint8_t * b
 static S caut_enc_get_byte_combination(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
 static S caut_enc_get_byte_union(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
 
-static S caut_dec_put_byte(SDI * di, uint8_t const * byte);
-static S caut_dec_put_byte_primitive(SDI * di, TD const * td, TDI * ti, uint8_t const * byte);
+static S caut_dec_put_byte(SDI * di, uint8_t const * byte, bool * progress);
+static S caut_dec_put_byte_primitive(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte);
+static S caut_dec_put_byte_synonym(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte);
 
 static size_t caut_tag_size(enum caut_tag tag);
 static void signed_promote(void const * in, size_t in_size, void * out, size_t out_size);
@@ -80,8 +85,6 @@ static S caut_enc_get_byte_primitive(SEI * ei, TD const * td, TEI * ti, uint8_t 
     uint8_t const * const type_bytes = ti->type;
 
     (void) ei;
-
-    assert(type_bytes);
 
     if (iter->word_position < desc->word_size) {
         *byte = type_bytes[iter->word_position];
@@ -337,22 +340,23 @@ static S caut_enc_get_byte_union(SEI * ei, TD const * td, TEI * ti, uint8_t * by
     }
 }
 
-static S caut_dec_put_byte(SDI * di, uint8_t const * byte) {
+static S caut_dec_put_byte(SDI * di, uint8_t const * byte, bool * progress) {
     TD const * td = NULL;
     TDI * ti = NULL;
+    *progress = false;
 
     RE(get_type_dec_iter(di, &ti));
     RE(get_type_desc(di->desc, ti->type_id, &td));
 
     switch (td->prototype_tag) {
     case caut_proto_primitive:
-        return caut_dec_put_byte_primitive(di, td, ti, byte);
+        return caut_dec_put_byte_primitive(di, td, ti, progress, byte);
+    case caut_proto_synonym:
+        return caut_dec_put_byte_synonym(di, td, ti, progress, byte);
     default:
         return caut_status_err_UNIMPLEMENTED;
 #if 0
-    case caut_proto_synonym:
-        return caut_enc_get_byte_synonym(ei, td, ti, byte);
-    case caut_proto_range:
+   case caut_proto_range:
         return caut_enc_get_byte_range(ei, td, ti, byte);
     case caut_proto_enumeration:
         return caut_enc_get_byte_enumeration(ei, td, ti, byte);
@@ -370,20 +374,45 @@ static S caut_dec_put_byte(SDI * di, uint8_t const * byte) {
     }
 }
 
-static S caut_dec_put_byte_primitive(SDI * di, TD const * td, TDI * ti, uint8_t const * byte) {
+static S caut_dec_put_byte_primitive(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte) {
     struct iter_primitive * iter = &ti->prototype.c_primitive;
     struct caut_primitive const * const desc = &td->prototype.c_primitive;
     uint8_t * const type_bytes = ti->type;
 
     (void) di;
 
-    assert(type_bytes);
+    STATE_CHECK(iter->word_position < desc->word_size);
+
+    if (NULL == byte) {
+        return caut_status_err_need_byte;
+    }
+
+    type_bytes[iter->word_position] = *byte;
+    iter->word_position += 1;
+
+    *progress = true;
 
     if (iter->word_position < desc->word_size) {
-        type_bytes[iter->word_position] = *byte;
-        iter->word_position += 1;
-
         return caut_status_ok_busy;
+    } else {
+        return caut_status_ok_pop;
+    }
+}
+
+static S caut_dec_put_byte_synonym(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte) {
+    struct iter_synonym * const iter = &ti->prototype.c_synonym;
+    struct caut_synonym const * const desc = &td->prototype.c_synonym;
+    TDI * new_ti = NULL;
+
+    (void)byte;
+
+    *progress = false;
+
+    if (iter->done == false) {
+        RE(push_type_dec_iter(di, &new_ti, desc->ref_id, ti->type));
+        iter->done = true;
+
+        return caut_status_ok_pushed;
     } else {
         return caut_status_ok_pop;
     }
@@ -475,27 +504,68 @@ S caut_dec_put(SDI * di, void const * buf, size_t buf_size, size_t * dec_bytes) 
     size_t * i = dec_bytes;
 
     while (*i < buf_size) {
+        bool progress = false;
         uint8_t const * const bytes = buf;
-        S const s = caut_dec_put_byte(di, &bytes[*i]);
+
+        S const s = caut_dec_put_byte(di, &bytes[*i], &progress);
+
+        if (progress) {
+            *i += 1;
+        }
 
         if (caut_status_ok_busy == s) {
-            DEBUG_CHAR('.');
-            *i += 1;
+            DEBUG_CHAR_IF(progress, '.');
         } else if (caut_status_ok_pop == s) {
+            DEBUG_CHAR_IF(progress, '.');
             DEBUG_CHAR(')');
             if (di->iter_top == 0) {
                 ret = caut_status_ok;
+                di->iter_top = SIZE_MAX;
                 break;
             } else {
                 di->iter_top -= 1;
             }
         } else if (caut_status_ok_pushed == s) {
             DEBUG_CHAR('(');
+            DEBUG_CHAR_IF(progress, '.');
         } else {
             assert(s >= ERRS_START);
             DEBUG_CHAR('!');
             ret = s;
             break;
+        }
+    }
+
+    if (ret != caut_status_ok && *i >= buf_size) {
+        // We ran out of bytes, but did not finish. Try and unwind the
+        // stack in case we have a bunch of pops in a row.
+
+        while (true) {
+            bool progress = false;
+            S const s = caut_dec_put_byte(di, NULL, &progress);
+
+            assert(false == progress);
+            assert(caut_status_ok_busy != s);
+
+            if (caut_status_ok_pop == s) {
+                DEBUG_CHAR(')');
+                if (di->iter_top == 0) {
+                    ret = caut_status_ok;
+                    di->iter_top = SIZE_MAX;
+                    break;
+                } else {
+                    di->iter_top -= 1;
+                }
+            } else if (caut_status_ok_pushed == s) {
+                DEBUG_CHAR('(');
+            } else if (caut_status_err_need_byte == s) {
+                ret = caut_status_ok_busy;
+                break;
+            } else {
+                // unhandled value
+                DEBUG_FMT("Unexpected return: %d\n", s);
+                assert(false);
+            }
         }
     }
 
