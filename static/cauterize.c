@@ -18,14 +18,16 @@
 #define SEI struct schema_encode_iterator
 #define SDI struct schema_decode_iterator
 
-#ifndef NDEBUG
-#define DEBUG_CHAR(c) putchar(c)
-#define DEBUG_CHAR_IF(cond, c) do { if (cond) { putchar(c); } } while (0)
-#define DEBUG_FMT(fmt, ...) printf(fmt, __VA_ARGS__)
-#else
+#define DEBUG_QUIET 1
+
+#if defined(NDEBUG) || defined(DEBUG_QUIET)
 #define DEBUG_CHAR(c)
 #define DEBUG_CHAR_IF(cond, c)
 #define DEBUG_FMT(fmt, ...)
+#else
+#define DEBUG_CHAR(c) putchar(c)
+#define DEBUG_CHAR_IF(cond, c) do { if (cond) { putchar(c); } } while (0)
+#define DEBUG_FMT(fmt, ...) printf(fmt, __VA_ARGS__)
 #endif
 
 #define STATE_CHECK(cond) do { if (!(cond)) { return caut_status_err_bad_state; } } while (0)

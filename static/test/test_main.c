@@ -11,71 +11,295 @@
 #include "caut_test_descriptors.h"
 
 struct schema_encode_iterator sei;
-struct schema_decode_iterator sdi;
-
 struct type_encode_iterator tei[SCHEMA_DEPTH_caut_test];
+
+struct schema_decode_iterator sdi;
 struct type_decode_iterator tdi[SCHEMA_DEPTH_caut_test];
 
-static void enc_test(void);
+static struct schema_descriptor const * const sd = &schema_descriptor_caut_test;
+
+static uint8_t enc_buffer[MAX_SIZE_caut_test];
+
 static void dec_test(void);
 
-int main(int argc, char * argv[]) {
-    (void)argc; (void)argv;
-
-    printf("sizeof(sei) == %lu\n", sizeof(sei));
-    printf("sizeof(tei) == %lu\n", sizeof(tei));
-    printf("sizeof(sdi) == %lu\n", sizeof(sdi));
-    printf("sizeof(tdi) == %lu\n", sizeof(tdi));
-
-    enc_test();
-    dec_test();
-
-    return 0;
-}
-
-static void enc_test(void) {
-    uint8_t buffer[32] = { 0 };
-
-    struct complex const e = {
-        .uni = {
-            ._tag = uni_tag_a,
-            .a = 0xAAAAAAAA,
-        },
-        .comb = {
-            ._flags = 0x06,
-            .b = 0xBBBB,
-            .c = 0xCC,
-        },
-        .rec = {
-            .a = 10,
-            .b = 1002,
-            .c = {
-                ._length = 2,
-                .elems = { 1, 2 },
-            },
-        },
-        .rng1 = 1002,
-        .en0 = en0_en_c,
-    };
+TEST test_encode_primitive(void) {
+    uint32_t enc = 0xAABBCCDD;
+    size_t encoded = 0;
 
     enum caut_status const init_stat =
         schema_encode_iterator_init(
-            &sei,
-            &schema_descriptor_caut_test,
-            tei,
+            &sei, sd, tei,
             TYPE_COUNT_caut_test,
-            type_id_caut_test_complex,
-            &e);
-    printf("init_stat: %u\n", init_stat);
+            type_id_caut_test_u32,
+            &enc);
 
-    size_t encoded = 0;
+    ASSERT_EQ(caut_status_ok, init_stat);
+
     enum caut_status const enc_status =
-        caut_enc_get(&sei, buffer, sizeof(buffer), &encoded);
-    printf("enc_status: %u %lu\n", enc_status, encoded);
+        caut_enc_get(&sei, enc_buffer, sizeof(enc_buffer), &encoded);
 
-    for (size_t i = 0; i < encoded; i++) {
-        printf("BYTE: %02X\n", buffer[i]);
-    }
+    ASSERT_EQ(caut_status_ok, enc_status);
+    ASSERT_EQ(4, encoded);
+
+    PASS();
+}
+
+TEST test_encode_synonym(void) {
+    syn enc = 0xAABBCCDD;
+    size_t encoded = 0;
+
+    enum caut_status const init_stat =
+        schema_encode_iterator_init(
+            &sei, sd, tei,
+            TYPE_COUNT_caut_test,
+            type_id_caut_test_syn,
+            &enc);
+
+    ASSERT_EQ(caut_status_ok, init_stat);
+
+    enum caut_status const enc_status =
+        caut_enc_get(&sei, enc_buffer, sizeof(enc_buffer), &encoded);
+
+    ASSERT_EQ(caut_status_ok, enc_status);
+    ASSERT_EQ(4, encoded);
+
+    PASS();
+}
+
+TEST test_encode_range(void) {
+    rng0 enc = -10;
+    size_t encoded = 0;
+
+    enum caut_status const init_stat =
+        schema_encode_iterator_init(
+            &sei, sd, tei,
+            TYPE_COUNT_caut_test,
+            type_id_caut_test_rng0,
+            &enc);
+
+    ASSERT_EQ(caut_status_ok, init_stat);
+
+    enum caut_status const enc_status =
+        caut_enc_get(&sei, enc_buffer, sizeof(enc_buffer), &encoded);
+
+    ASSERT_EQ(caut_status_ok, enc_status);
+    ASSERT_EQ(2, encoded);
+
+    PASS();
+}
+
+TEST test_encode_enumeration(void) {
+    enum en0 enc = en0_en_c;
+    size_t encoded = 0;
+
+    enum caut_status const init_stat =
+        schema_encode_iterator_init(
+            &sei, sd, tei,
+            TYPE_COUNT_caut_test,
+            type_id_caut_test_en0,
+            &enc);
+
+    ASSERT_EQ(caut_status_ok, init_stat);
+
+    enum caut_status const enc_status =
+        caut_enc_get(&sei, enc_buffer, sizeof(enc_buffer), &encoded);
+
+    ASSERT_EQ(caut_status_ok, enc_status);
+    ASSERT_EQ(1, encoded);
+    ASSERT_EQ(2, enc_buffer[0]);
+
+    PASS();
+}
+
+TEST test_encode_array(void) {
+    struct arr enc = { { 1, 2 } };
+    size_t encoded = 0;
+
+    enum caut_status const init_stat =
+        schema_encode_iterator_init(
+            &sei, sd, tei,
+            TYPE_COUNT_caut_test,
+            type_id_caut_test_arr,
+            &enc);
+
+    ASSERT_EQ(caut_status_ok, init_stat);
+
+    enum caut_status const enc_status =
+        caut_enc_get(&sei, enc_buffer, sizeof(enc_buffer), &encoded);
+
+    ASSERT_EQ(caut_status_ok, enc_status);
+    ASSERT_EQ(8, encoded);
+
+    PASS();
+}
+
+TEST test_encode_vector(void) {
+    struct vec enc = { ._length = 1, .elems = { 1 } };
+    size_t encoded = 0;
+
+    enum caut_status const init_stat =
+        schema_encode_iterator_init(
+            &sei, sd, tei,
+            TYPE_COUNT_caut_test,
+            type_id_caut_test_vec,
+            &enc);
+
+    ASSERT_EQ(caut_status_ok, init_stat);
+
+    enum caut_status const enc_status =
+        caut_enc_get(&sei, enc_buffer, sizeof(enc_buffer), &encoded);
+
+    ASSERT_EQ(caut_status_ok, enc_status);
+    ASSERT_EQ(5, encoded);
+
+    PASS();
+}
+
+TEST test_encode_record(void) {
+    struct rec enc = { .a = -10, .b = 1050, .c = { ._length = 2, .elems = { 2, 3 } } };
+    size_t encoded = 0;
+
+    enum caut_status const init_stat =
+        schema_encode_iterator_init(
+            &sei, sd, tei,
+            TYPE_COUNT_caut_test,
+            type_id_caut_test_rec,
+            &enc);
+
+    ASSERT_EQ(caut_status_ok, init_stat);
+
+    enum caut_status const enc_status =
+        caut_enc_get(&sei, enc_buffer, sizeof(enc_buffer), &encoded);
+
+    ASSERT_EQ(caut_status_ok, enc_status);
+    ASSERT_EQ(12, encoded);
+
+    PASS();
+}
+
+TEST test_encode_combination(void) {
+    struct comb enc = { ._flags = 0x4, .c = 5 };
+    size_t encoded = 0;
+
+    enum caut_status const init_stat =
+        schema_encode_iterator_init(
+            &sei, sd, tei,
+            TYPE_COUNT_caut_test,
+            type_id_caut_test_comb,
+            &enc);
+
+    ASSERT_EQ(caut_status_ok, init_stat);
+
+    enum caut_status const enc_status =
+        caut_enc_get(&sei, enc_buffer, sizeof(enc_buffer), &encoded);
+
+    ASSERT_EQ(caut_status_ok, enc_status);
+    ASSERT_EQ(2, encoded);
+
+    PASS();
+}
+
+TEST test_encode_union(void) {
+    struct uni enc = { ._tag = uni_tag_b, .c = 5 };
+    size_t encoded = 0;
+
+    enum caut_status const init_stat =
+        schema_encode_iterator_init(
+            &sei, sd, tei,
+            TYPE_COUNT_caut_test,
+            type_id_caut_test_uni,
+            &enc);
+
+    ASSERT_EQ(caut_status_ok, init_stat);
+
+    enum caut_status const enc_status =
+        caut_enc_get(&sei, enc_buffer, sizeof(enc_buffer), &encoded);
+
+    ASSERT_EQ(caut_status_ok, enc_status);
+    ASSERT_EQ(3, encoded);
+
+    PASS();
+}
+
+TEST test_decode_primitive(void) {
+    FAIL();
+}
+
+TEST test_decode_synonym(void) {
+    FAIL();
+}
+
+TEST test_decode_range(void) {
+    FAIL();
+}
+
+TEST test_decode_enumeration(void) {
+    FAIL();
+}
+
+TEST test_decode_array(void) {
+    FAIL();
+}
+
+TEST test_decode_vector(void) {
+    FAIL();
+}
+
+TEST test_decode_record(void) {
+    FAIL();
+}
+
+TEST test_decode_combination(void) {
+    FAIL();
+}
+
+TEST test_decode_union(void) {
+    FAIL();
+}
+
+
+SUITE(encode) {
+    RUN_TEST(test_encode_primitive);
+    RUN_TEST(test_encode_synonym);
+    RUN_TEST(test_encode_range);
+    RUN_TEST(test_encode_enumeration);
+    RUN_TEST(test_encode_array);
+    RUN_TEST(test_encode_vector);
+    RUN_TEST(test_encode_record);
+    RUN_TEST(test_encode_combination);
+    RUN_TEST(test_encode_union);
+}
+
+SUITE(decode) {
+    RUN_TEST(test_decode_primitive);
+    RUN_TEST(test_decode_synonym);
+    RUN_TEST(test_decode_range);
+    RUN_TEST(test_decode_enumeration);
+    RUN_TEST(test_decode_array);
+    RUN_TEST(test_decode_vector);
+    RUN_TEST(test_decode_record);
+    RUN_TEST(test_decode_combination);
+    RUN_TEST(test_decode_union);
+}
+
+GREATEST_MAIN_DEFS();
+
+int main(int argc, char * argv[]) {
+    GREATEST_MAIN_BEGIN();
+
+    printf("Schema Encoding Iterators are %lu bytes in size.\n", sizeof(sei));
+    printf("Type Encoding Iterators are %lu bytes in size.\n", sizeof(tei[0]));
+    printf("Schema Decoding Iterators are %lu bytes in size.\n", sizeof(sdi));
+    printf("Type Decoding Iterators are %lu bytes in size.\n", sizeof(tdi[0]));
+
+    dec_test();
+
+    RUN_SUITE(encode);
+    RUN_SUITE(decode);
+
+    GREATEST_MAIN_END();
+
+    return 0;
 }
 
 static void dec_test(void) {
