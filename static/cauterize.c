@@ -18,7 +18,7 @@
 #define SEI struct schema_encode_iterator
 #define SDI struct schema_decode_iterator
 
-// #define DEBUG_QUIET 1
+#define DEBUG_QUIET 1
 
 #if defined(NDEBUG) || defined(DEBUG_QUIET)
 #define DEBUG_CHAR(c)
@@ -48,6 +48,7 @@ static S caut_dec_put_byte_primitive(SDI * di, TD const * td, TDI * ti, bool * p
 static S caut_dec_put_byte_synonym(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte);
 static S caut_dec_put_byte_range(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte);
 static S caut_dec_put_byte_enumeration(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte);
+static S caut_dec_put_byte_array(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte);
 
 static size_t caut_tag_size(enum caut_tag tag);
 static void signed_convert(void const * in, size_t in_size, void * out, size_t out_size);
@@ -370,13 +371,11 @@ static S caut_dec_put_byte(SDI * di, uint8_t const * byte, bool * progress) {
         return caut_dec_put_byte_range(di, td, ti, progress, byte);
     case caut_proto_enumeration:
         return caut_dec_put_byte_enumeration(di, td, ti, progress, byte);
+    case caut_proto_array:
+        return caut_dec_put_byte_array(di, td, ti, progress, byte);
     default:
         return caut_status_err_UNIMPLEMENTED;
 #if 0
-    case caut_proto_enumeration:
-        return caut_enc_get_byte_enumeration(ei, td, ti, byte);
-    case caut_proto_array:
-        return caut_enc_get_byte_array(ei, td, ti, byte);
     case caut_proto_vector:
         return caut_enc_get_byte_vector(ei, td, ti, byte);
     case caut_proto_record:
@@ -514,6 +513,28 @@ static S caut_dec_put_byte_enumeration(SDI * di, TD const * td, TDI * ti, bool *
         }
     } else {
         return caut_status_ok_busy;
+    }
+}
+
+static S caut_dec_put_byte_array(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte) {
+    struct iter_array * const iter = &ti->prototype.c_array;
+    struct caut_array const * const desc = &td->prototype.c_array;
+    TDI * new_ti = NULL;
+
+    (void) byte;
+
+    *progress = false;
+
+    if (iter->elem_position < desc->length) {
+        void * const base =
+            (void *)(
+                ((uintptr_t)ti->type) +
+                (desc->elem_span * iter->elem_position));
+        RE(push_type_dec_iter(di, &new_ti, desc->ref_id, base));
+        iter->elem_position += 1;
+        return caut_status_ok_pushed;
+    } else {
+        return caut_status_ok_pop;
     }
 }
 

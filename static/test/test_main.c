@@ -20,8 +20,6 @@ static struct schema_descriptor const * const sd = &schema_descriptor_caut_test;
 
 static uint8_t enc_buffer[MAX_SIZE_caut_test];
 
-static void dec_test(void);
-
 TEST test_encode_primitive(void) {
     uint32_t enc = 0xAABBCCDD;
     size_t encoded = 0;
@@ -322,7 +320,30 @@ TEST test_decode_enumeration(void) {
 }
 
 TEST test_decode_array(void) {
-    FAIL();
+    uint8_t const buffer[] = { 0x01, 0x00, 0x00, 0x00
+                             , 0x02, 0x00, 0x00, 0x00 };
+    size_t decoded = 0;
+
+    struct arr dec = { { 0, 0 } };
+
+    enum caut_status const init_stat =
+        schema_decode_iterator_init(
+            &sdi, sd, tdi,
+            TYPE_COUNT_caut_test,
+            type_id_caut_test_arr,
+            &dec);
+
+    ASSERT_EQ(caut_status_ok, init_stat);
+
+    enum caut_status const dec_status =
+        caut_dec_put(&sdi, buffer, sizeof(buffer), &decoded);
+
+    ASSERT_EQ_FMT(caut_status_ok, dec_status, "%d");
+    ASSERT_EQ(8, decoded);
+    ASSERT_EQ(1, dec.elems[0]);
+    ASSERT_EQ(2, dec.elems[1]);
+
+    PASS();
 }
 
 TEST test_decode_vector(void) {
@@ -376,38 +397,10 @@ int main(int argc, char * argv[]) {
     printf("Schema Decoding Iterators are %lu bytes in size.\n", sizeof(sdi));
     printf("Type Decoding Iterators are %lu bytes in size.\n", sizeof(tdi[0]));
 
-    dec_test();
-
     RUN_SUITE(encode);
     RUN_SUITE(decode);
 
     GREATEST_MAIN_END();
 
     return 0;
-}
-
-static void dec_test(void) {
-    uint8_t const buffer[] = { 0xAA, 0xBB, 0xCC, 0xDD };
-    size_t const BSIZE = sizeof(buffer);
-    uint32_t d = 0;
-    uint8_t const * const dbuf = (uint8_t *)&d;
-
-    enum caut_status const init_stat =
-        schema_decode_iterator_init(
-            &sdi,
-            &schema_descriptor_caut_test,
-            tdi,
-            TYPE_COUNT_caut_test,
-            type_id_caut_test_u32,
-            &d);
-    printf("init_stat: %u\n", init_stat);
-
-    size_t decoded = 0;
-    enum caut_status const dec_status =
-        caut_dec_put(&sdi, buffer, BSIZE, &decoded);
-    printf("dec_status: %u %lu\n", dec_status, decoded);
-
-    for (size_t i = 0; i < BSIZE; i++) {
-        printf("BYTE: %02X\n", dbuf[i]);
-    }
 }
