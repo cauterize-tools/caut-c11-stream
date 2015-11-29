@@ -18,7 +18,7 @@
 #define SEI struct schema_encode_iterator
 #define SDI struct schema_decode_iterator
 
-#define DEBUG_QUIET 1
+// #define DEBUG_QUIET 1
 
 #if defined(NDEBUG) || defined(DEBUG_QUIET)
 #define DEBUG_CHAR(c)
@@ -47,6 +47,7 @@ static S caut_dec_put_byte(SDI * di, uint8_t const * byte, bool * progress);
 static S caut_dec_put_byte_primitive(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte);
 static S caut_dec_put_byte_synonym(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte);
 static S caut_dec_put_byte_range(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte);
+static S caut_dec_put_byte_enumeration(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte);
 
 static size_t caut_tag_size(enum caut_tag tag);
 static void signed_convert(void const * in, size_t in_size, void * out, size_t out_size);
@@ -367,6 +368,8 @@ static S caut_dec_put_byte(SDI * di, uint8_t const * byte, bool * progress) {
         return caut_dec_put_byte_synonym(di, td, ti, progress, byte);
     case caut_proto_range:
         return caut_dec_put_byte_range(di, td, ti, progress, byte);
+    case caut_proto_enumeration:
+        return caut_dec_put_byte_enumeration(di, td, ti, progress, byte);
     default:
         return caut_status_err_UNIMPLEMENTED;
 #if 0
@@ -445,6 +448,7 @@ static S caut_dec_put_byte_range(SDI * di, TD const * td, TDI * ti, bool * progr
     } else {
         *progress = true;
         b[iter->tag_iter.tag_position] = *byte;
+        iter->tag_iter.tag_position += 1;
     }
 
     if (iter->tag_iter.tag_position >= caut_tag_size(desc->tag)) {
@@ -482,6 +486,31 @@ static S caut_dec_put_byte_range(SDI * di, TD const * td, TDI * ti, bool * progr
 
                 return caut_status_ok_pop;
             }
+        }
+    } else {
+        return caut_status_ok_busy;
+    }
+}
+
+static S caut_dec_put_byte_enumeration(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte) {
+    struct iter_enumeration * const iter = &ti->prototype.c_enumeration;
+    struct caut_enumeration const * const desc = &td->prototype.c_enumeration;
+    uint8_t * const b = (uint8_t *)&iter->tag_iter.tag_buffer;
+
+    (void) di;
+
+    assert(iter->tag_iter.tag_position < caut_tag_size(desc->tag));
+
+    *progress = true;
+    b[iter->tag_iter.tag_position] = *byte;
+    iter->tag_iter.tag_position += 1;
+
+    if (iter->tag_iter.tag_position >= caut_tag_size(desc->tag)) {
+        if (iter->tag_iter.tag_buffer >= desc->length) {
+            return caut_status_err_invalid_enum;
+        } else {
+            memcpy(ti->type, &iter->tag_iter.tag_buffer, caut_tag_size(desc->tag));
+            return caut_status_ok_pop;
         }
     } else {
         return caut_status_ok_busy;
