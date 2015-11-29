@@ -195,7 +195,10 @@ static S caut_enc_get_byte_array(SEI * ei, TD const * td, TEI * ti, uint8_t * by
     (void) byte;
 
     if (iter->elem_position < desc->length) {
-        void const * base = ti->type + (desc->elem_span * iter->elem_position);
+        void const * base =
+            (void *)(
+                ((uintptr_t)ti->type) +
+                (desc->elem_span * iter->elem_position));
 
         RE(push_type_enc_iter(ei, &new_ti, desc->ref_id, base));
         iter->elem_position += 1;
@@ -227,9 +230,9 @@ static S caut_enc_get_byte_vector(SEI * ei, TD const * td, TEI * ti, uint8_t * b
         // accumulating elements
         TEI * new_ti = NULL;
         void const * base =
-            ti->type +
-            desc->elem_offset +
-            (iter->elem_position * desc->elem_span);
+            (void *)(
+                ((uintptr_t)ti->type) +
+                (desc->elem_span * iter->elem_position));
 
         RE(push_type_enc_iter(ei, &new_ti, desc->ref_id, base));
         iter->elem_position += 1;
@@ -249,7 +252,7 @@ static S caut_enc_get_byte_record(SEI * ei, TD const * td, TEI * ti, uint8_t * b
     if (iter->field_position < desc->field_count) {
         struct caut_field const * const field = &desc->fields[iter->field_position];
         TEI * new_ti = NULL;
-        void const * base = ti->type + field->offset;
+        void const * base = (void *)(((uintptr_t)ti->type) + field->offset);
 
         if (field->data == false) {
             return caut_status_err_invalid_record;
@@ -290,7 +293,7 @@ static S caut_enc_get_byte_combination(SEI * ei, TD const * td, TEI * ti, uint8_
                 continue;
             } else {
                 struct caut_field const * const field = &desc->fields[iter->field_position];
-                void const * base = ti->type + field->offset;
+                void const * base = (void *)(((uintptr_t)ti->type) + field->offset);
                 TEI * new_ti = NULL;
 
                 iter->field_position += 1;
@@ -327,7 +330,7 @@ static S caut_enc_get_byte_union(SEI * ei, TD const * td, TEI * ti, uint8_t * by
         return caut_status_ok_busy;
     } else {
         struct caut_field const * const field = &desc->fields[word];
-        void const * base = ti->type + field->offset;
+        void const * base = (void *)(((uintptr_t)ti->type) + field->offset);
         TEI * new_ti = NULL;
 
         if (iter->field_done || !field->data) {
@@ -431,23 +434,25 @@ static S caut_dec_put_byte_range(SDI * di, TD const * td, TDI * ti, bool * progr
 
     (void) di;
 
-    if (iter->tag_iter.tag_position < caut_tag_size(desc->tag)) {
-        uint8_t * b = &iter->tag_iter.tag_buffer;
+    assert(iter->tag_iter.tag_position < caut_tag_size(desc->tag));
 
-        if (NULL == byte) {
-            return caut_status_err_need_byte;
-        } else {
-            b[iter->tag_iter.tag_position] = *byte;
-        }
+    uint8_t * b = (uint8_t *)&iter->tag_iter.tag_buffer;
+
+    if (NULL == byte) {
+        return caut_status_err_need_byte;
     } else {
+        *progress = true;
+        b[iter->tag_iter.tag_position] = *byte;
+    }
+
+    if (iter->tag_iter.tag_position >= caut_tag_size(desc->tag)) {
         if (desc->offset < 0) {
             int64_t const rmin = desc->offset;
             int64_t const rmax = desc->offset + desc->length;
             int64_t s = 0;
 
             signed_convert(
-                &iter->tag_iter.tag_buffer,
-                caut_tag_size(desc->tag),
+                &iter->tag_iter.tag_buffer, caut_tag_size(desc->tag),
                 &s, sizeof(s));
 
             s += desc->offset;
@@ -457,8 +462,7 @@ static S caut_dec_put_byte_range(SDI * di, TD const * td, TDI * ti, bool * progr
             } else {
                 signed_convert(
                     &s, sizeof(s),
-                    ti->type,
-                    desc->word_size);
+                    ti->type, desc->word_size);
 
                 return caut_status_ok_pop;
             }
@@ -477,6 +481,8 @@ static S caut_dec_put_byte_range(SDI * di, TD const * td, TDI * ti, bool * progr
                 return caut_status_ok_pop;
             }
         }
+    } else {
+        return caut_status_ok_busy;
     }
 }
 
