@@ -222,19 +222,103 @@ TEST test_encode_union(void) {
 }
 
 TEST test_decode_primitive(void) {
-    FAIL();
+    uint8_t const buffer[] = { 0xAA, 0xBB, 0xCC, 0xDD };
+    size_t decoded = 0;
+
+    uint32_t dec = 0;
+
+    enum caut_status const init_stat =
+        schema_decode_iterator_init(
+            &sdi, sd, tdi,
+            TYPE_COUNT_caut_test,
+            type_id_caut_test_u32,
+            &dec);
+
+    ASSERT_EQ(caut_status_ok, init_stat);
+
+    enum caut_status const dec_status =
+        caut_dec_put(&sdi, buffer, sizeof(buffer), &decoded);
+
+    ASSERT_EQ(caut_status_ok, dec_status);
+    ASSERT_EQ(4, decoded);
+    ASSERT_EQ(0xDDCCBBAA, dec);
+
+    PASS();
 }
 
 TEST test_decode_synonym(void) {
-    FAIL();
+    uint8_t const buffer[] = { 0xAA, 0xBB, 0xCC, 0xDD };
+    size_t decoded = 0;
+
+    syn dec = 0;
+
+    enum caut_status const init_stat =
+        schema_decode_iterator_init(
+            &sdi, sd, tdi,
+            TYPE_COUNT_caut_test,
+            type_id_caut_test_syn,
+            &dec);
+
+    ASSERT_EQ(caut_status_ok, init_stat);
+
+    enum caut_status const dec_status =
+        caut_dec_put(&sdi, buffer, sizeof(buffer), &decoded);
+
+    ASSERT_EQ(caut_status_ok, dec_status);
+    ASSERT_EQ(4, decoded);
+    ASSERT_EQ(0xDDCCBBAA, dec);
+
+    PASS();
 }
 
 TEST test_decode_range(void) {
-    FAIL();
+    uint8_t const buffer[] = { 0xDE, 0x03 };
+    size_t decoded = 0;
+
+    rng0 dec = 0;
+
+    enum caut_status const init_stat =
+        schema_decode_iterator_init(
+            &sdi, sd, tdi,
+            TYPE_COUNT_caut_test,
+            type_id_caut_test_rng0,
+            &dec);
+
+    ASSERT_EQ(caut_status_ok, init_stat);
+
+    enum caut_status const dec_status =
+        caut_dec_put(&sdi, buffer, sizeof(buffer), &decoded);
+
+    ASSERT_EQ(caut_status_ok, dec_status);
+    ASSERT_EQ(2, decoded);
+    ASSERT_EQ(-10, dec);
+
+    PASS();
 }
 
 TEST test_decode_enumeration(void) {
-    FAIL();
+    uint8_t const buffer[] = { 0x01 };
+    size_t decoded = 0;
+
+    enum en0 dec = 0;
+
+    enum caut_status const init_stat =
+        schema_decode_iterator_init(
+            &sdi, sd, tdi,
+            TYPE_COUNT_caut_test,
+            type_id_caut_test_en0,
+            &dec);
+
+    ASSERT_EQ(caut_status_ok, init_stat);
+
+    enum caut_status const dec_status =
+        caut_dec_put(&sdi, buffer, sizeof(buffer), &decoded);
+
+    ASSERT_EQ_FMT(caut_status_ok, dec_status, "%d");
+    ASSERT_EQ(1, decoded);
+    ASSERT_EQ(en0_en_b, dec);
+
+    PASS();
 }
 
 TEST test_decode_array(void) {
