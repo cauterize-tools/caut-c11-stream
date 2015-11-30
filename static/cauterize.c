@@ -545,7 +545,7 @@ static S caut_dec_put_byte_vector(SDI * di, TD const * td, TDI * ti, bool * prog
     struct iter_vector * const iter = &ti->prototype.c_vector;
     struct caut_vector const * const desc = &td->prototype.c_vector;
     uint8_t * const b = (uint8_t *)&iter->tag_iter.tag_buffer;
-    uint8_t * const t = (uint8_t *)&ti->type;
+    uint8_t * const t = (uint8_t *)ti->type;
     TDI * new_ti = NULL;
 
     *progress = false;
