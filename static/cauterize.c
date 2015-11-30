@@ -25,9 +25,9 @@
 #define DEBUG_CHAR_IF(cond, c)
 #define DEBUG_FMT(fmt, ...)
 #else
-#define DEBUG_CHAR(c) putchar(c)
-#define DEBUG_CHAR_IF(cond, c) do { if (cond) { putchar(c); } } while (0)
-#define DEBUG_FMT(fmt, ...) printf(fmt, __VA_ARGS__)
+#define DEBUG_CHAR(c) do { putchar(c); fflush(stdout); } while (0)
+#define DEBUG_CHAR_IF(cond, c) do { if (cond) { DEBUG_CHAR(c); } } while (0)
+#define DEBUG_FMT(fmt, ...) do { printf(fmt, __VA_ARGS__); fflush(stdout); } while (0)
 #endif
 
 #define STATE_CHECK(cond) do { if (!(cond)) { return caut_status_err_bad_state; } } while (0)
@@ -49,6 +49,7 @@ static S caut_dec_put_byte_synonym(SDI * di, TD const * td, TDI * ti, bool * pro
 static S caut_dec_put_byte_range(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte);
 static S caut_dec_put_byte_enumeration(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte);
 static S caut_dec_put_byte_array(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte);
+static S caut_dec_put_byte_vector(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte);
 
 static size_t caut_tag_size(enum caut_tag tag);
 static void signed_convert(void const * in, size_t in_size, void * out, size_t out_size);
@@ -373,6 +374,8 @@ static S caut_dec_put_byte(SDI * di, uint8_t const * byte, bool * progress) {
         return caut_dec_put_byte_enumeration(di, td, ti, progress, byte);
     case caut_proto_array:
         return caut_dec_put_byte_array(di, td, ti, progress, byte);
+    case caut_proto_vector:
+        return caut_dec_put_byte_vector(di, td, ti, progress, byte);
     default:
         return caut_status_err_UNIMPLEMENTED;
 #if 0
@@ -538,6 +541,50 @@ static S caut_dec_put_byte_array(SDI * di, TD const * td, TDI * ti, bool * progr
     }
 }
 
+static S caut_dec_put_byte_vector(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte) {
+    struct iter_vector * const iter = &ti->prototype.c_vector;
+    struct caut_vector const * const desc = &td->prototype.c_vector;
+    uint8_t * const b = (uint8_t *)&iter->tag_iter.tag_buffer;
+    uint8_t * const t = (uint8_t *)&ti->type;
+    TDI * new_ti = NULL;
+
+    *progress = false;
+
+    if (iter->tag_iter.tag_position < caut_tag_size(desc->tag)) {
+        // Copy the byte into both a tag buffer and the final tag
+        // position. It goes in both places so that we can length
+        // check using the buffer as a u64 and have the value in place
+        // in the final tag memory.
+
+        if (NULL == byte) {
+            return caut_status_err_need_byte;
+        } else {
+            b[iter->tag_iter.tag_position] = *byte;
+            t[iter->tag_iter.tag_position] = *byte;
+
+            *progress = true;
+            iter->tag_iter.tag_position += 1;
+
+            return caut_status_ok_busy;
+        }
+    } else if (iter->tag_iter.tag_buffer > desc->max_length) {
+        return caut_status_err_invalid_vector;
+    } else if (iter->elem_position < iter->tag_iter.tag_buffer) {
+        void * const base =
+            (void *)(
+                ((uintptr_t)ti->type) +
+                desc->elem_offset +
+                (desc->elem_span * iter->elem_position));
+
+        RE(push_type_dec_iter(di, &new_ti, desc->ref_id, base));
+        iter->elem_position += 1;
+
+        return caut_status_ok_pushed;
+    } else {
+        return caut_status_ok_pop;
+    }
+}
+
 static size_t caut_tag_size(enum caut_tag tag) {
     switch (tag) {
     case caut_tag_8: return 1;
@@ -633,7 +680,7 @@ S caut_dec_put(SDI * di, void const * buf, size_t buf_size, size_t * dec_bytes) 
 
     DEBUG_CHAR('(');
 
-    size_t * i = dec_bytes;
+    size_t * const i = dec_bytes;
 
     while (*i < buf_size) {
         bool progress = false;

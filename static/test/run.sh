@@ -1,7 +1,7 @@
 #!/bin/sh
 
 OUT_BIN="caut_test"
-CFLAGS="-Wall -Wextra -Werror --std=c11 -pedantic"
+CFLAGS="-g -Wall -Wextra -Werror --std=c11 -pedantic"
 INCLUDES="-Igenerated/"
 
 stack build
