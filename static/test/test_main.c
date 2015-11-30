@@ -157,7 +157,7 @@ TEST test_encode_vector(void) {
 }
 
 TEST test_encode_record(void) {
-    struct rec enc = { .a = -10, .b = 1050, .c = { ._length = 2, .elems = { 2, 3 } } };
+    struct rec enc = { .a = 1, .b = 2, .c = { ._length = 2, .elems = { 2, 3 } } };
     size_t encoded = 0;
 
     enum caut_status const init_stat =
@@ -173,7 +173,7 @@ TEST test_encode_record(void) {
         caut_enc_get(sei, enc_buffer, buf_size, &encoded);
 
     ASSERT_EQ(caut_status_ok, enc_status);
-    ASSERT_EQ(12, encoded);
+    ASSERT_EQ(15, encoded);
 
     PASS();
 }
@@ -377,7 +377,34 @@ TEST test_decode_vector(void) {
 }
 
 TEST test_decode_record(void) {
-    FAIL();
+    uint8_t const buffer[] = {
+        0xAA, 0xBB,
+        0xCC, 0xDD, 0xEE, 0xFF,
+        0x01, 0x09, 0x00, 0x00, 0x00
+    };
+
+    size_t decoded = 0;
+    struct rec dec = { 0, 0, { 0, { 0, 0 } } };
+
+    enum caut_status const init_stat =
+        schema_decode_iterator_init(
+            sdi, sd, tdi,
+            SCHEMA_DEPTH_caut_test,
+            type_id_caut_test_rec,
+            &dec);
+
+    ASSERT_EQ(caut_status_ok, init_stat);
+
+    enum caut_status const dec_status =
+        caut_dec_put(sdi, buffer, buf_size, &decoded);
+
+    ASSERT_EQ_FMT(caut_status_ok, dec_status, "%d");
+    ASSERT_EQ(0xBBAA, dec.a);
+    ASSERT_EQ(0xFFEEDDCC, dec.b);
+    ASSERT_EQ(1, dec.c._length);
+    ASSERT_EQ(9, dec.c.elems[0]);
+
+    PASS();
 }
 
 TEST test_decode_combination(void) {

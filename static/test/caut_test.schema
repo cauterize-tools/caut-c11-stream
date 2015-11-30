@@ -11,8 +11,8 @@
 
 (type rec record
       (fields
-       (field a rng0)
-       (field b rng1)
+       (field a u16)
+       (field b u32)
        (field c vec)))
 
 (type comb combination
