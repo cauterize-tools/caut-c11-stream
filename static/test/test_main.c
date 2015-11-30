@@ -30,7 +30,7 @@ TEST test_encode_primitive(void) {
     enum caut_status const init_stat =
         schema_encode_iterator_init(
             sei, sd, tei,
-            TYPE_COUNT_caut_test,
+            SCHEMA_DEPTH_caut_test,
             type_id_caut_test_u32,
             &enc);
 
@@ -52,7 +52,7 @@ TEST test_encode_synonym(void) {
     enum caut_status const init_stat =
         schema_encode_iterator_init(
             sei, sd, tei,
-            TYPE_COUNT_caut_test,
+            SCHEMA_DEPTH_caut_test,
             type_id_caut_test_syn,
             &enc);
 
@@ -74,7 +74,7 @@ TEST test_encode_range(void) {
     enum caut_status const init_stat =
         schema_encode_iterator_init(
             sei, sd, tei,
-            TYPE_COUNT_caut_test,
+            SCHEMA_DEPTH_caut_test,
             type_id_caut_test_rng0,
             &enc);
 
@@ -96,7 +96,7 @@ TEST test_encode_enumeration(void) {
     enum caut_status const init_stat =
         schema_encode_iterator_init(
             sei, sd, tei,
-            TYPE_COUNT_caut_test,
+            SCHEMA_DEPTH_caut_test,
             type_id_caut_test_en0,
             &enc);
 
@@ -119,7 +119,7 @@ TEST test_encode_array(void) {
     enum caut_status const init_stat =
         schema_encode_iterator_init(
             sei, sd, tei,
-            TYPE_COUNT_caut_test,
+            SCHEMA_DEPTH_caut_test,
             type_id_caut_test_arr,
             &enc);
 
@@ -141,7 +141,7 @@ TEST test_encode_vector(void) {
     enum caut_status const init_stat =
         schema_encode_iterator_init(
             sei, sd, tei,
-            TYPE_COUNT_caut_test,
+            SCHEMA_DEPTH_caut_test,
             type_id_caut_test_vec,
             &enc);
 
@@ -163,7 +163,7 @@ TEST test_encode_record(void) {
     enum caut_status const init_stat =
         schema_encode_iterator_init(
             sei, sd, tei,
-            TYPE_COUNT_caut_test,
+            SCHEMA_DEPTH_caut_test,
             type_id_caut_test_rec,
             &enc);
 
@@ -185,7 +185,7 @@ TEST test_encode_combination(void) {
     enum caut_status const init_stat =
         schema_encode_iterator_init(
             sei, sd, tei,
-            TYPE_COUNT_caut_test,
+            SCHEMA_DEPTH_caut_test,
             type_id_caut_test_comb,
             &enc);
 
@@ -207,7 +207,7 @@ TEST test_encode_union(void) {
     enum caut_status const init_stat =
         schema_encode_iterator_init(
             sei, sd, tei,
-            TYPE_COUNT_caut_test,
+            SCHEMA_DEPTH_caut_test,
             type_id_caut_test_uni,
             &enc);
 
@@ -231,7 +231,7 @@ TEST test_decode_primitive(void) {
     enum caut_status const init_stat =
         schema_decode_iterator_init(
             sdi, sd, tdi,
-            TYPE_COUNT_caut_test,
+            SCHEMA_DEPTH_caut_test,
             type_id_caut_test_u32,
             &dec);
 
@@ -256,7 +256,7 @@ TEST test_decode_synonym(void) {
     enum caut_status const init_stat =
         schema_decode_iterator_init(
             sdi, sd, tdi,
-            TYPE_COUNT_caut_test,
+            SCHEMA_DEPTH_caut_test,
             type_id_caut_test_syn,
             &dec);
 
@@ -281,7 +281,7 @@ TEST test_decode_range(void) {
     enum caut_status const init_stat =
         schema_decode_iterator_init(
             sdi, sd, tdi,
-            TYPE_COUNT_caut_test,
+            SCHEMA_DEPTH_caut_test,
             type_id_caut_test_rng0,
             &dec);
 
@@ -306,7 +306,7 @@ TEST test_decode_enumeration(void) {
     enum caut_status const init_stat =
         schema_decode_iterator_init(
             sdi, sd, tdi,
-            TYPE_COUNT_caut_test,
+            SCHEMA_DEPTH_caut_test,
             type_id_caut_test_en0,
             &dec);
 
@@ -332,7 +332,7 @@ TEST test_decode_array(void) {
     enum caut_status const init_stat =
         schema_decode_iterator_init(
             sdi, sd, tdi,
-            TYPE_COUNT_caut_test,
+            SCHEMA_DEPTH_caut_test,
             type_id_caut_test_arr,
             &dec);
 
@@ -359,7 +359,7 @@ TEST test_decode_vector(void) {
     enum caut_status const init_stat =
         schema_decode_iterator_init(
             sdi, sd, tdi,
-            TYPE_COUNT_caut_test,
+            SCHEMA_DEPTH_caut_test,
             type_id_caut_test_vec,
             &dec);
 
