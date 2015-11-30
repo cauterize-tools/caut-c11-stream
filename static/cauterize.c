@@ -50,6 +50,7 @@ static S caut_dec_put_byte_range(SDI * di, TD const * td, TDI * ti, bool * progr
 static S caut_dec_put_byte_enumeration(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte);
 static S caut_dec_put_byte_array(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte);
 static S caut_dec_put_byte_vector(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte);
+static S caut_dec_put_byte_record(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte);
 
 static size_t caut_tag_size(enum caut_tag tag);
 static void signed_convert(void const * in, size_t in_size, void * out, size_t out_size);
@@ -376,13 +377,11 @@ static S caut_dec_put_byte(SDI * di, uint8_t const * byte, bool * progress) {
         return caut_dec_put_byte_array(di, td, ti, progress, byte);
     case caut_proto_vector:
         return caut_dec_put_byte_vector(di, td, ti, progress, byte);
+    case caut_proto_record:
+        return caut_dec_put_byte_record(di, td, ti, progress, byte);
     default:
         return caut_status_err_UNIMPLEMENTED;
 #if 0
-    case caut_proto_vector:
-        return caut_enc_get_byte_vector(ei, td, ti, byte);
-    case caut_proto_record:
-        return caut_enc_get_byte_record(ei, td, ti, byte);
     case caut_proto_combination:
         return caut_enc_get_byte_combination(ei, td, ti, byte);
     case caut_proto_union:
@@ -580,6 +579,33 @@ static S caut_dec_put_byte_vector(SDI * di, TD const * td, TDI * ti, bool * prog
         iter->elem_position += 1;
 
         return caut_status_ok_pushed;
+    } else {
+        return caut_status_ok_pop;
+    }
+}
+
+static S caut_dec_put_byte_record(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte) {
+    struct iter_record * const iter = &ti->prototype.c_record;
+    struct caut_record const * const desc = &td->prototype.c_record;
+
+    (void) byte;
+
+    *progress = false;
+
+    if (iter->field_position < desc->field_count) {
+        struct caut_field const * const field = &desc->fields[iter->field_position];
+        TDI * new_ti = NULL;
+        void * const base = (void *)(((uintptr_t)ti->type) + field->offset);
+
+        if (field->data == false) {
+            return caut_status_err_invalid_record;
+        } else {
+            RE(push_type_dec_iter(di, &new_ti, field->ref_id, base));
+            iter->field_position += 1;
+        }
+
+        return caut_status_ok_pushed;
+
     } else {
         return caut_status_ok_pop;
     }
