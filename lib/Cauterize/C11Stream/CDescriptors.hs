@@ -40,7 +40,8 @@ cDescriptorsFromSpec s = unindent [i|
   struct schema_descriptor const schema_descriptor_#{ln} = {
     .type_count = TYPE_COUNT_#{ln},
     .types = type_descriptors_#{ln},
-  };|]
+  };
+|]
   where
     ln = unpack (S.specName s)
     types = S.specTypes s

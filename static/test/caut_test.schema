@@ -1,0 +1,36 @@
+(name "caut_test")
+(version "0.0.1")
+
+(type syn synonym u32)
+(type rng0 range -1000 100)
+(type rng1 range 1000 1100)
+(type en0 enumeration
+      (values en_a en_b en_c))
+(type arr array syn 2)
+(type vec vector syn 2)
+
+(type rec record
+      (fields
+       (field a u16)
+       (field b u32)
+       (field c vec)))
+
+(type comb combination
+      (fields
+       (field a u32)
+       (field b u16)
+       (field c u8)))
+
+(type uni union
+      (fields
+       (field a u32)
+       (field b u16)
+       (field c u8)))
+
+(type complex record
+      (fields
+       (field uni uni)
+       (field comb comb)
+       (field rec rec)
+       (field rng1 rng1)
+       (field en0 en0)))

@@ -35,6 +35,7 @@ S type_decode_iterator_init(SD const * sd, TDI * ti, int type_id, void * type) {
     RE(get_type_desc(sd, type_id, &td));
 
     memset(ti, 0, sizeof(*ti));
+
     ti->proto = td->prototype_tag;
     ti->type = type;
     ti->type_id = type_id;
@@ -63,7 +64,6 @@ S schema_decode_iterator_init(SDI * si, SD const * sd, TDI * ti, size_t ti_count
     si->iters = ti;
     si->iter_count = ti_count;
     si->iter_top = 0;
-    si->iters = ti;
     si->dst_type = dst_type;
 
     RE(type_decode_iterator_init(sd, ti, type_id, dst_type));
@@ -93,6 +93,14 @@ S push_type_enc_iter(SEI * ei, TEI ** ti_out, int type_id, void const * type_bas
     ei->iter_top += 1;
     RE(get_type_enc_iter(ei, ti_out));
     RE(type_encode_iterator_init(ei->desc, *ti_out, type_id, type_base));
+
+    return caut_status_ok;
+}
+
+S push_type_dec_iter(SDI * di, TDI ** ti_out, int type_id, void * type_base) {
+    di->iter_top += 1;
+    RE(get_type_dec_iter(di, ti_out));
+    RE(type_decode_iterator_init(di->desc, *ti_out, type_id, type_base));
 
     return caut_status_ok;
 }
