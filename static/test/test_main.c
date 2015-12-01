@@ -424,11 +424,6 @@ TEST test_decode_combination(void) {
     enum caut_status const dec_status =
         caut_dec_put(sdi, buffer, buf_size, &decoded);
 
-    for (size_t i = 0; i < sizeof(dec); i++) {
-        uint8_t const * const bytes = (uint8_t *)&dec;
-        printf("%zu %02X\n", i, bytes[i]);
-    }
-
     ASSERT_EQ_FMT(caut_status_ok, dec_status, "%d");
     ASSERT_EQ_FMT(2, dec._flags, "%d");
     ASSERT_EQ_FMT(0xAABB, dec.b, "%X");
@@ -437,7 +432,27 @@ TEST test_decode_combination(void) {
 }
 
 TEST test_decode_union(void) {
-    FAIL();
+    uint8_t const buffer[] = { 0x02, 0xBB };
+    size_t decoded = 0;
+    struct uni dec = { 0, { 0 } };
+
+    enum caut_status const init_stat =
+        schema_decode_iterator_init(
+            sdi, sd, tdi,
+            SCHEMA_DEPTH_caut_test,
+            type_id_caut_test_uni,
+            &dec);
+
+    ASSERT_EQ(caut_status_ok, init_stat);
+
+    enum caut_status const dec_status =
+        caut_dec_put(sdi, buffer, buf_size, &decoded);
+
+    ASSERT_EQ_FMT(caut_status_ok, dec_status, "%d");
+    ASSERT_EQ_FMT(2, dec._tag, "%d");
+    ASSERT_EQ_FMT(0xBB, dec.c, "%X");
+
+    PASS();
 }
 
 
@@ -454,11 +469,11 @@ SUITE(encode) {
 }
 
 SUITE(decode) {
-    IGNORE_TEST(test_decode_primitive);
-    IGNORE_TEST(test_decode_synonym);
-    IGNORE_TEST(test_decode_range);
-    IGNORE_TEST(test_decode_enumeration);
-    IGNORE_TEST(test_decode_array);
+    RUN_TEST(test_decode_primitive);
+    RUN_TEST(test_decode_synonym);
+    RUN_TEST(test_decode_range);
+    RUN_TEST(test_decode_enumeration);
+    RUN_TEST(test_decode_array);
     RUN_TEST(test_decode_vector);
     RUN_TEST(test_decode_record);
     RUN_TEST(test_decode_combination);
