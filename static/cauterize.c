@@ -51,6 +51,7 @@ static S caut_dec_put_byte_enumeration(SDI * di, TD const * td, TDI * ti, bool *
 static S caut_dec_put_byte_array(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte);
 static S caut_dec_put_byte_vector(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte);
 static S caut_dec_put_byte_record(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte);
+static S caut_dec_put_byte_combination(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte);
 
 static size_t caut_tag_size(enum caut_tag tag);
 static void signed_convert(void const * in, size_t in_size, void * out, size_t out_size);
@@ -379,6 +380,8 @@ static S caut_dec_put_byte(SDI * di, uint8_t const * byte, bool * progress) {
         return caut_dec_put_byte_vector(di, td, ti, progress, byte);
     case caut_proto_record:
         return caut_dec_put_byte_record(di, td, ti, progress, byte);
+    case caut_proto_combination:
+        return caut_dec_put_byte_combination(di, td, ti, progress, byte);
     default:
         return caut_status_err_UNIMPLEMENTED;
 #if 0
@@ -607,6 +610,54 @@ static S caut_dec_put_byte_record(SDI * di, TD const * td, TDI * ti, bool * prog
         return caut_status_ok_pushed;
 
     } else {
+        return caut_status_ok_pop;
+    }
+}
+
+static S caut_dec_put_byte_combination(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte) {
+    struct iter_combination * const iter = &ti->prototype.c_combination;
+    struct caut_combination const * const desc = &td->prototype.c_combination;
+    uint8_t * const b = (uint8_t *)&iter->tag_iter.tag_buffer;
+    uint8_t * const t = (uint8_t *)ti->type;
+
+    if (iter->tag_iter.tag_position < caut_tag_size(desc->tag)) {
+        *progress = true;
+
+        // still accumulating tag
+        b[iter->tag_iter.tag_position] = *byte;
+        t[iter->tag_iter.tag_position] = *byte;
+        iter->tag_iter.tag_position += 1;
+
+        return caut_status_ok_busy;
+    } else {
+        if (iter->tag_iter.tag_buffer > ((1 << desc->field_count) - 1)) {
+            return caut_status_err_invalid_combination;
+        }
+
+        while (iter->field_position < desc->field_count) {
+            uint64_t const field_flag = 1 << iter->field_position;
+
+            if (0 == (field_flag & iter->tag_iter.tag_buffer)) {
+                iter->field_position += 1;
+                continue;
+            } else {
+                struct caut_field const * const field = &desc->fields[iter->field_position];
+                void * const base = (void *)(((uintptr_t)ti->type) + field->offset);
+                TDI * new_ti = NULL;
+
+                printf("offset: %llu\n", field->offset);
+
+                iter->field_position += 1;
+
+                if (field->data) {
+                    RE(push_type_dec_iter(di, &new_ti, field->ref_id, base));
+                    return caut_status_ok_pushed;
+                } else {
+                    continue;
+                }
+            }
+        }
+
         return caut_status_ok_pop;
     }
 }

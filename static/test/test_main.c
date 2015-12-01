@@ -408,7 +408,32 @@ TEST test_decode_record(void) {
 }
 
 TEST test_decode_combination(void) {
-    FAIL();
+    uint8_t const buffer[] = { 0x02, 0xBB, 0xAA };
+    size_t decoded = 0;
+    struct comb dec = { 0, 0, 0, 0 };
+
+    enum caut_status const init_stat =
+        schema_decode_iterator_init(
+            sdi, sd, tdi,
+            SCHEMA_DEPTH_caut_test,
+            type_id_caut_test_comb,
+            &dec);
+
+    ASSERT_EQ(caut_status_ok, init_stat);
+
+    enum caut_status const dec_status =
+        caut_dec_put(sdi, buffer, buf_size, &decoded);
+
+    for (size_t i = 0; i < sizeof(dec); i++) {
+        uint8_t const * const bytes = (uint8_t *)&dec;
+        printf("%zu %02X\n", i, bytes[i]);
+    }
+
+    ASSERT_EQ_FMT(caut_status_ok, dec_status, "%d");
+    ASSERT_EQ_FMT(2, dec._flags, "%d");
+    ASSERT_EQ_FMT(0xAABB, dec.b, "%X");
+
+    PASS();
 }
 
 TEST test_decode_union(void) {
