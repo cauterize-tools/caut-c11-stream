@@ -18,30 +18,30 @@
 #define SEI struct schema_encode_iterator
 #define SDI struct schema_decode_iterator
 
-#define DEBUG_QUIET 1
+// #define DEBUG_QUIET 1
 
 #if defined(NDEBUG) || defined(DEBUG_QUIET)
 #define DEBUG_CHAR(c)
 #define DEBUG_CHAR_IF(cond, c)
 #define DEBUG_FMT(fmt, ...)
 #else
-#define DEBUG_CHAR(c) do { putchar(c); fflush(stdout); } while (0)
+#define DEBUG_CHAR(c) do { fputc(c, stderr); fflush(stderr); } while (0)
 #define DEBUG_CHAR_IF(cond, c) do { if (cond) { DEBUG_CHAR(c); } } while (0)
-#define DEBUG_FMT(fmt, ...) do { printf(fmt, __VA_ARGS__); fflush(stdout); } while (0)
+#define DEBUG_FMT(fmt, ...) do { fprintf(stderr, fmt, __VA_ARGS__); fflush(stderr); } while (0)
 #endif
 
 #define STATE_CHECK(cond) do { if (!(cond)) { return caut_status_err_bad_state; } } while (0)
 
-static S caut_enc_get_byte(SEI * ei, uint8_t * byte);
-static S caut_enc_get_byte_primitive(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
-static S caut_enc_get_byte_synonym(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
-static S caut_enc_get_byte_range(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
-static S caut_enc_get_byte_enumeration(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
-static S caut_enc_get_byte_array(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
-static S caut_enc_get_byte_vector(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
-static S caut_enc_get_byte_record(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
-static S caut_enc_get_byte_combination(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
-static S caut_enc_get_byte_union(SEI * ei, TD const * td, TEI * ti, uint8_t * byte);
+static S caut_enc_get_byte(SEI * ei, uint8_t * byte, bool * progress);
+static S caut_enc_get_byte_primitive(SEI * ei, TD const * td, TEI * ti, bool * progress, uint8_t * byte);
+static S caut_enc_get_byte_synonym(SEI * ei, TD const * td, TEI * ti, bool * progress, uint8_t * byte);
+static S caut_enc_get_byte_range(SEI * ei, TD const * td, TEI * ti, bool * progress, uint8_t * byte);
+static S caut_enc_get_byte_enumeration(SEI * ei, TD const * td, TEI * ti, bool * progress, uint8_t * byte);
+static S caut_enc_get_byte_array(SEI * ei, TD const * td, TEI * ti, bool * progress, uint8_t * byte);
+static S caut_enc_get_byte_vector(SEI * ei, TD const * td, TEI * ti, bool * progress, uint8_t * byte);
+static S caut_enc_get_byte_record(SEI * ei, TD const * td, TEI * ti, bool * progress, uint8_t * byte);
+static S caut_enc_get_byte_combination(SEI * ei, TD const * td, TEI * ti, bool * progress, uint8_t * byte);
+static S caut_enc_get_byte_union(SEI * ei, TD const * td, TEI * ti, bool * progress, uint8_t * byte);
 
 static S caut_dec_put_byte(SDI * di, uint8_t const * byte, bool * progress);
 static S caut_dec_put_byte_primitive(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte);
@@ -57,38 +57,40 @@ static S caut_dec_put_byte_union(SDI * di, TD const * td, TDI * ti, bool * progr
 static size_t caut_tag_size(enum caut_tag tag);
 static void signed_convert(void const * in, size_t in_size, void * out, size_t out_size);
 
-static S caut_enc_get_byte(SEI * ei, uint8_t * byte) {
+static S caut_enc_get_byte(SEI * ei, uint8_t * byte, bool * progress) {
     TD const * td = NULL;
     TEI * ti = NULL;
+
+    *progress = false;
 
     RE(get_type_enc_iter(ei, &ti));
     RE(get_type_desc(ei->desc, ti->type_id, &td));
 
     switch (td->prototype_tag) {
     case caut_proto_primitive:
-        return caut_enc_get_byte_primitive(ei, td, ti, byte);
+        return caut_enc_get_byte_primitive(ei, td, ti, progress, byte);
     case caut_proto_synonym:
-        return caut_enc_get_byte_synonym(ei, td, ti, byte);
+        return caut_enc_get_byte_synonym(ei, td, ti, progress, byte);
     case caut_proto_range:
-        return caut_enc_get_byte_range(ei, td, ti, byte);
+        return caut_enc_get_byte_range(ei, td, ti, progress, byte);
     case caut_proto_enumeration:
-        return caut_enc_get_byte_enumeration(ei, td, ti, byte);
+        return caut_enc_get_byte_enumeration(ei, td, ti, progress, byte);
     case caut_proto_array:
-        return caut_enc_get_byte_array(ei, td, ti, byte);
+        return caut_enc_get_byte_array(ei, td, ti, progress, byte);
     case caut_proto_vector:
-        return caut_enc_get_byte_vector(ei, td, ti, byte);
+        return caut_enc_get_byte_vector(ei, td, ti, progress, byte);
     case caut_proto_record:
-        return caut_enc_get_byte_record(ei, td, ti, byte);
+        return caut_enc_get_byte_record(ei, td, ti, progress, byte);
     case caut_proto_combination:
-        return caut_enc_get_byte_combination(ei, td, ti, byte);
+        return caut_enc_get_byte_combination(ei, td, ti, progress, byte);
     case caut_proto_union:
-        return caut_enc_get_byte_union(ei, td, ti, byte);
+        return caut_enc_get_byte_union(ei, td, ti, progress, byte);
     default:
         return caut_status_err_UNIMPLEMENTED;
     }
 }
 
-static S caut_enc_get_byte_primitive(SEI * ei, TD const * td, TEI * ti, uint8_t * byte) {
+static S caut_enc_get_byte_primitive(SEI * ei, TD const * td, TEI * ti, bool * progress, uint8_t * byte) {
     struct iter_primitive * iter = &ti->prototype.c_primitive;
     struct caut_primitive const * const desc = &td->prototype.c_primitive;
     uint8_t const * const type_bytes = ti->type;
@@ -96,21 +98,28 @@ static S caut_enc_get_byte_primitive(SEI * ei, TD const * td, TEI * ti, uint8_t 
     (void) ei;
 
     if (iter->word_position < desc->word_size) {
-        *byte = type_bytes[iter->word_position];
-        iter->word_position += 1;
+        if (NULL == byte) {
+            return caut_status_err_need_byte;
+        } else {
+            *progress = true;
+            *byte = type_bytes[iter->word_position];
+            iter->word_position += 1;
 
-        return caut_status_ok_busy;
+            return caut_status_ok_busy;
+        }
     } else {
         return caut_status_ok_pop;
     }
 }
 
-static S caut_enc_get_byte_synonym(SEI * ei, TD const * td, TEI * ti, uint8_t * byte) {
+static S caut_enc_get_byte_synonym(SEI * ei, TD const * td, TEI * ti, bool * progress, uint8_t * byte) {
     (void)byte;
 
     struct iter_synonym * const iter = &ti->prototype.c_synonym;
     struct caut_synonym const * const desc = &td->prototype.c_synonym;
     TEI * new_ti = NULL;
+
+    *progress = false;
 
     if (iter->done == false) {
         RE(push_type_enc_iter(ei, &new_ti, desc->ref_id, ti->type));
@@ -122,7 +131,7 @@ static S caut_enc_get_byte_synonym(SEI * ei, TD const * td, TEI * ti, uint8_t * 
     }
 }
 
-static S caut_enc_get_byte_range(SEI * ei, TD const * td, TEI * ti, uint8_t * byte) {
+static S caut_enc_get_byte_range(SEI * ei, TD const * td, TEI * ti, bool * progress, uint8_t * byte) {
     struct iter_range * const iter = &ti->prototype.c_range;
     struct caut_range const * const desc = &td->prototype.c_range;
 
@@ -163,16 +172,21 @@ static S caut_enc_get_byte_range(SEI * ei, TD const * td, TEI * ti, uint8_t * by
 
         assert(b);
 
-        *byte = b[iter->tag_iter.tag_position];
-        iter->tag_iter.tag_position += 1;
+        if (NULL == byte) {
+            return caut_status_err_need_byte;
+        } else {
+            *progress = true;
+            *byte = b[iter->tag_iter.tag_position];
+            iter->tag_iter.tag_position += 1;
 
-        return caut_status_ok_busy;
+            return caut_status_ok_busy;
+        }
     } else {
         return caut_status_ok_pop;
     }
 }
 
-static S caut_enc_get_byte_enumeration(SEI * ei, TD const * td, TEI * ti, uint8_t * byte) {
+static S caut_enc_get_byte_enumeration(SEI * ei, TD const * td, TEI * ti, bool * progress, uint8_t * byte) {
     struct iter_enumeration * const iter = &ti->prototype.c_enumeration;
     struct caut_enumeration const * const desc = &td->prototype.c_enumeration;
 
@@ -184,22 +198,26 @@ static S caut_enc_get_byte_enumeration(SEI * ei, TD const * td, TEI * ti, uint8_
 
         if (word >= desc->length) {
             return caut_status_err_invalid_enum;
+        } else if (NULL == byte) {
+            return caut_status_err_need_byte;
+        } else {
+            *progress = true;
+            *byte = ((uint8_t *)&word)[iter->tag_iter.tag_position];
+            iter->tag_iter.tag_position += 1;
+
+            return caut_status_ok_busy;
         }
-
-        *byte = ((uint8_t *)&word)[iter->tag_iter.tag_position];
-        iter->tag_iter.tag_position += 1;
-
-        return caut_status_ok_busy;
     } else {
         return caut_status_ok_pop;
     }
 }
 
-static S caut_enc_get_byte_array(SEI * ei, TD const * td, TEI * ti, uint8_t * byte) {
+static S caut_enc_get_byte_array(SEI * ei, TD const * td, TEI * ti, bool * progress, uint8_t * byte) {
     struct iter_array * const iter = &ti->prototype.c_array;
     struct caut_array const * const desc = &td->prototype.c_array;
     TEI * new_ti = NULL;
 
+    *progress = false;
     (void) byte;
 
     if (iter->elem_position < desc->length) {
@@ -217,7 +235,7 @@ static S caut_enc_get_byte_array(SEI * ei, TD const * td, TEI * ti, uint8_t * by
     }
 }
 
-static S caut_enc_get_byte_vector(SEI * ei, TD const * td, TEI * ti, uint8_t * byte) {
+static S caut_enc_get_byte_vector(SEI * ei, TD const * td, TEI * ti, bool * progress, uint8_t * byte) {
     struct iter_vector * const iter = &ti->prototype.c_vector;
     struct caut_vector const * const desc = &td->prototype.c_vector;
 
@@ -228,12 +246,15 @@ static S caut_enc_get_byte_vector(SEI * ei, TD const * td, TEI * ti, uint8_t * b
         // still accumulating tag
         if (word > desc->max_length) {
             return caut_status_err_invalid_vector;
+        } else if (NULL == byte) {
+            return caut_status_err_need_byte;
+        } else {
+            *progress = true;
+            *byte = ((uint8_t *)&word)[iter->tag_iter.tag_position];
+            iter->tag_iter.tag_position += 1;
+
+            return caut_status_ok_busy;
         }
-
-        *byte = ((uint8_t *)&word)[iter->tag_iter.tag_position];
-        iter->tag_iter.tag_position += 1;
-
-        return caut_status_ok_busy;
     } else if (iter->elem_position < word) {
         // accumulating elements
         TEI * new_ti = NULL;
@@ -252,11 +273,12 @@ static S caut_enc_get_byte_vector(SEI * ei, TD const * td, TEI * ti, uint8_t * b
     }
 }
 
-static S caut_enc_get_byte_record(SEI * ei, TD const * td, TEI * ti, uint8_t * byte) {
+static S caut_enc_get_byte_record(SEI * ei, TD const * td, TEI * ti, bool * progress, uint8_t * byte) {
     struct iter_record * const iter = &ti->prototype.c_record;
     struct caut_record const * const desc = &td->prototype.c_record;
 
     (void) byte;
+    *progress = false;
 
     if (iter->field_position < desc->field_count) {
         struct caut_field const * const field = &desc->fields[iter->field_position];
@@ -276,7 +298,7 @@ static S caut_enc_get_byte_record(SEI * ei, TD const * td, TEI * ti, uint8_t * b
     }
 }
 
-static S caut_enc_get_byte_combination(SEI * ei, TD const * td, TEI * ti, uint8_t * byte) {
+static S caut_enc_get_byte_combination(SEI * ei, TD const * td, TEI * ti, bool * progress, uint8_t * byte) {
     struct iter_combination * const iter = &ti->prototype.c_combination;
     struct caut_combination const * const desc = &td->prototype.c_combination;
 
@@ -287,12 +309,15 @@ static S caut_enc_get_byte_combination(SEI * ei, TD const * td, TEI * ti, uint8_
         // still accumulating tag
         if (word > ((1 << desc->field_count) - 1)) {
             return caut_status_err_invalid_combination;
+        } else if (NULL == byte) {
+            return caut_status_err_need_byte;
+        } else {
+            *progress = true;
+            *byte = ((uint8_t *)&word)[iter->tag_iter.tag_position];
+            iter->tag_iter.tag_position += 1;
+
+            return caut_status_ok_busy;
         }
-
-        *byte = ((uint8_t *)&word)[iter->tag_iter.tag_position];
-        iter->tag_iter.tag_position += 1;
-
-        return caut_status_ok_busy;
     } else {
         while (iter->field_position < desc->field_count) {
             uint64_t const field_flag = 1 << iter->field_position;
@@ -320,7 +345,7 @@ static S caut_enc_get_byte_combination(SEI * ei, TD const * td, TEI * ti, uint8_
     }
 }
 
-static S caut_enc_get_byte_union(SEI * ei, TD const * td, TEI * ti, uint8_t * byte) {
+static S caut_enc_get_byte_union(SEI * ei, TD const * td, TEI * ti, bool * progress, uint8_t * byte) {
     struct iter_union * const iter = &ti->prototype.c_union;
     struct caut_union const * const desc = &td->prototype.c_union;
 
@@ -331,12 +356,15 @@ static S caut_enc_get_byte_union(SEI * ei, TD const * td, TEI * ti, uint8_t * by
         // still accumulating tag
         if (word > desc->field_count) {
             return caut_status_err_invalid_union;
+        } else if (NULL == byte) {
+            return caut_status_err_need_byte;
+        } else {
+            *progress = true;
+            *byte = ((uint8_t *)&word)[iter->tag_iter.tag_position];
+            iter->tag_iter.tag_position += 1;
+
+            return caut_status_ok_busy;
         }
-
-        *byte = ((uint8_t *)&word)[iter->tag_iter.tag_position];
-        iter->tag_iter.tag_position += 1;
-
-        return caut_status_ok_busy;
     } else {
         struct caut_field const * const field = &desc->fields[word];
         void const * base = (void *)(((uintptr_t)ti->type) + field->offset);
@@ -753,16 +781,21 @@ S caut_enc_get(SEI * ei, void * buf, size_t buf_size, size_t * enc_bytes) {
 
     size_t * i = enc_bytes;
     while (*i < buf_size) {
+        bool progress = false;
         uint8_t * const bytes = buf;
-        S const s = caut_enc_get_byte(ei, &bytes[*i]);
+        S const s = caut_enc_get_byte(ei, &bytes[*i], &progress);
+
+        if (progress) {
+            *i += 1;
+        }
 
         if (caut_status_ok_busy == s) {
             DEBUG_CHAR('.');
-            *i += 1;
         } else if (caut_status_ok_pop == s) {
             DEBUG_CHAR(')');
             if (ei->iter_top == 0) {
                 ret = caut_status_ok;
+                ei->iter_top = SIZE_MAX;
                 break;
             } else {
                 ei->iter_top -= 1;
@@ -777,7 +810,39 @@ S caut_enc_get(SEI * ei, void * buf, size_t buf_size, size_t * enc_bytes) {
         }
     }
 
-    DEBUG_FMT("\nret = %d\n", ret);
+    if (ret != caut_status_ok && ret < ERRS_START && *i >= buf_size) {
+        // We ran out of bytes, did not error, but did not finish. Try
+        // and unwind the stack in case we have a bunch of pops in a
+        // row.
+
+        while (true) {
+            bool progress = false;
+            S const s = caut_enc_get_byte(ei, NULL, &progress);
+
+            assert(false == progress);
+            assert(caut_status_ok_busy != s);
+
+            if (caut_status_ok_pop == s) {
+                DEBUG_CHAR(')');
+                if (ei->iter_top == 0) {
+                    ret = caut_status_ok;
+                    ei->iter_top = SIZE_MAX;
+                    break;
+                } else {
+                    ei->iter_top -= 1;
+                }
+            } else if (caut_status_ok_pushed == s) {
+                DEBUG_CHAR('(');
+            } else if (caut_status_err_need_byte == s) {
+                ret = caut_status_ok_busy;
+                break;
+            } else {
+                // unhandled value
+                DEBUG_FMT("Unexpected return: %d\n", s);
+                assert(false);
+            }
+        }
+    }
 
     return ret;
 }
@@ -824,9 +889,10 @@ S caut_dec_put(SDI * di, void const * buf, size_t buf_size, size_t * dec_bytes) 
         }
     }
 
-    if (ret != caut_status_ok && *i >= buf_size) {
-        // We ran out of bytes, but did not finish. Try and unwind the
-        // stack in case we have a bunch of pops in a row.
+    if (ret != caut_status_ok && ret < ERRS_START && *i >= buf_size) {
+        // We ran out of bytes, did not error, but did not finish. Try
+        // and unwind the stack in case we have a bunch of pops in a
+        // row.
 
         while (true) {
             bool progress = false;
