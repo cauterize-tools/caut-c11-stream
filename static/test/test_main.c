@@ -455,6 +455,40 @@ TEST test_decode_union(void) {
     PASS();
 }
 
+TEST test_float_in_vector(void) {
+    // encode
+    struct floatvec enc = { ._length = 1, .elems = { -4.64 } };
+    size_t encoded = 0;
+
+    enum caut_status const init_stat =
+        schema_encode_iterator_init(
+            sei, sd, tei,
+            SCHEMA_DEPTH_caut_test,
+            type_id_caut_test_floatvec,
+            &enc);
+
+    ASSERT_EQ(caut_status_ok, init_stat);
+
+    enum caut_status const enc_status =
+        caut_enc_get(sei, enc_buffer, buf_size, &encoded);
+
+    ASSERT_EQ(caut_status_ok, enc_status);
+    ASSERT_EQ_FMT(9, encoded, "%lu");
+
+    ASSERT_EQ_FMT(1, enc_buffer[0], "%02X");
+
+    ASSERT_EQ_FMT(0x8F, enc_buffer[1], "%02X");
+    ASSERT_EQ_FMT(0xC2, enc_buffer[2], "%02X");
+    ASSERT_EQ_FMT(0xF5, enc_buffer[3], "%02X");
+    ASSERT_EQ_FMT(0x28, enc_buffer[4], "%02X");
+    ASSERT_EQ_FMT(0x5C, enc_buffer[5], "%02X");
+    ASSERT_EQ_FMT(0x8F, enc_buffer[6], "%02X");
+    ASSERT_EQ_FMT(0x12, enc_buffer[7], "%02X");
+    ASSERT_EQ_FMT(0xC0, enc_buffer[8], "%02X");
+
+    PASS();
+
+}
 
 SUITE(encode) {
     RUN_TEST(test_encode_primitive);
@@ -480,6 +514,10 @@ SUITE(decode) {
     RUN_TEST(test_decode_union);
 }
 
+SUITE(corner) {
+    RUN_TEST(test_float_in_vector);
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char * argv[]) {
@@ -501,6 +539,7 @@ int main(int argc, char * argv[]) {
 
     RUN_SUITE(encode);
     RUN_SUITE(decode);
+    RUN_SUITE(corner);
 
     GREATEST_MAIN_END();
 

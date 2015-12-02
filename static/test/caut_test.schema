@@ -34,3 +34,5 @@
        (field rec rec)
        (field rng1 rng1)
        (field en0 en0)))
+
+(type floatvec vector f64 4)
