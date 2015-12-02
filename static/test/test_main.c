@@ -487,7 +487,53 @@ TEST test_float_in_vector(void) {
     ASSERT_EQ_FMT(0xC0, enc_buffer[8], "%02X");
 
     PASS();
+}
 
+TEST test_big_range(void) {
+    {
+        rng_big_unsigned enc = 2624738754863070707;
+        size_t encoded = 0;
+
+        enum caut_status const init_stat =
+            schema_encode_iterator_init(
+                sei, sd, tei,
+                SCHEMA_DEPTH_caut_test,
+                type_id_caut_test_rng_big_unsigned,
+                &enc);
+
+        ASSERT_EQ(caut_status_ok, init_stat);
+
+        enum caut_status const enc_status =
+            caut_enc_get(sei, enc_buffer, buf_size, &encoded);
+
+        ASSERT_EQ(caut_status_ok, enc_status);
+        ASSERT_EQ(8, encoded);
+    }
+
+    {
+        uint8_t const buffer[] = { 0xf3, 0x7d, 0xd0, 0xb7, 0xfd, 0xf1, 0x6c, 0x24 };
+        size_t decoded = 0;
+
+        rng_big_unsigned dec = 0;
+
+        enum caut_status const init_stat =
+            schema_decode_iterator_init(
+                sdi, sd, tdi,
+                SCHEMA_DEPTH_caut_test,
+                type_id_caut_test_rng_big_unsigned,
+                &dec);
+
+        ASSERT_EQ(caut_status_ok, init_stat);
+
+        enum caut_status const dec_status =
+            caut_dec_put(sdi, buffer, sizeof(buffer), &decoded);
+
+        ASSERT_EQ(caut_status_ok, dec_status);
+        ASSERT_EQ(2, decoded);
+        ASSERT_EQ(0, dec);
+    }
+
+    PASS();
 }
 
 SUITE(encode) {
@@ -516,6 +562,7 @@ SUITE(decode) {
 
 SUITE(corner) {
     RUN_TEST(test_float_in_vector);
+    RUN_TEST(test_big_range);
 }
 
 GREATEST_MAIN_DEFS();
