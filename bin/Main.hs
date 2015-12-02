@@ -6,6 +6,7 @@ import Cauterize.C11Stream.HTypes
 import Cauterize.C11Stream.HDescriptors
 import Cauterize.C11Stream.CDescriptors
 import Cauterize.C11Stream.StaticFiles
+import Cauterize.C11Stream.CrucibleInterface
 import Data.Text (unpack)
 import System.Directory
 import System.FilePath.Posix
@@ -46,6 +47,7 @@ generateDynamicFiles path baseName spec = do
   writeFile (path `combine` (baseName ++ "_types.h")) (hTypesFromSpec spec)
   writeFile (path `combine` (baseName ++ "_descriptors.h")) (hDescriptorsFromSpec spec)
   writeFile (path `combine` (baseName ++ "_descriptors.c")) (cDescriptorsFromSpec spec)
+  writeFile (path `combine` (baseName ++ "_crucible.c")) (crucibleFromSpec spec)
 
   mapM_ staticWrite allFiles
 

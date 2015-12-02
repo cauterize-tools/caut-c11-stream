@@ -33,6 +33,10 @@ iteratorsDotC = ("cauterize_iterators.c", $(embedFile "static/cauterize_iterator
 testMainDotC :: (FilePath, B.ByteString)
 testMainDotC = ("crucible_main.c", $(embedFile "static/crucible_main.c"))
 
+crucibleInterfaceDotH :: (FilePath, B.ByteString)
+crucibleInterfaceDotH = ("crucible_interface.h", $(embedFile "static/crucible_interface.h"))
+
+
 allFiles :: [(FilePath, B.ByteString)]
 allFiles =
   [ cauterizeDotH
@@ -44,4 +48,5 @@ allFiles =
   , iteratorsDotH
   , iteratorsDotC
   , testMainDotC
+  , crucibleInterfaceDotH
   ]

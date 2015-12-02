@@ -23,6 +23,7 @@ library
                      , Cauterize.C11Stream.CDescriptors
                      , Cauterize.C11Stream.Util
                      , Cauterize.C11Stream.StaticFiles
+                     , Cauterize.C11Stream.CrucibleInterface
 
 
 executable caut-c11-stream
