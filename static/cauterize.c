@@ -512,6 +512,8 @@ static S caut_dec_put_byte_range(SDI * di, TD const * td, TDI * ti, bool * progr
             uint64_t u = 0;
             memcpy(&u, &iter->tag_iter.tag_buffer, caut_tag_size(desc->tag));
 
+            u += desc->offset;
+
             if (u < rmin || rmax < u) {
                 return caut_status_err_invalid_range;
             } else {
