@@ -10,10 +10,12 @@ import Data.String.Interpolate.Util
 import Data.Text (unpack)
 import Data.List (intercalate)
 import Data.Maybe
+import Numeric (showHex)
 
 import qualified Data.Map as M
 import qualified Cauterize.Specification as S
 import qualified Cauterize.CommonTypes as C
+import qualified Cauterize.Hash as H
 
 cDescriptorsFromSpec :: S.Specification -> String
 cDescriptorsFromSpec s = unindent [i|
@@ -62,11 +64,21 @@ cDescriptorsFromSpec s = unindent [i|
     {
       .name = "#{n}",
       .type_id = type_id_#{ln}_#{n},
+      .fingerprint = {#{formatFp (S.typeFingerprint t)}},
       .prototype_tag = caut_proto_#{tps},
       .prototype.c_#{tps} = {
 #{prototypeBody luDecl s t}
       },
     },|]
+
+formatFp :: H.Hash -> String
+formatFp f =
+  let bs = H.hashToBytes f
+      showByte n = case showHex n "" of
+                     [a] -> ['0', 'x', '0', a]
+                     [a,b] -> ['0', 'x', a, b]
+                     _ -> error "formatFp: should be impossible"
+  in intercalate "," (map showByte bs)
 
 fieldSets :: S.Specification -> [S.Type] -> String
 fieldSets s ts = intercalate "\n" $ mapMaybe (fieldSet s) ts
