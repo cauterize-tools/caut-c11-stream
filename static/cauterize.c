@@ -240,6 +240,7 @@ static S caut_enc_get_byte_vector(SEI * ei, TD const * td, TEI * ti, uint8_t * b
         void const * base =
             (void *)(
                 ((uintptr_t)ti->type) +
+                desc->elem_offset +
                 (desc->elem_span * iter->elem_position));
 
         RE(push_type_enc_iter(ei, &new_ti, desc->ref_id, base));
