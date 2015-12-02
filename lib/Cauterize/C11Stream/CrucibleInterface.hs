@@ -18,9 +18,12 @@ crucibleFromSpec s = unindent [i|
   size_t const schema_length_word_size = #{slws};
   size_t const schema_tag_size = #{sts};
   size_t const schema_max_size = #{sms};
+  size_t const schema_depth = #{sd};
+  struct schema_descriptor const * const schema_schema_descriptor = &schema_descriptor_#{ln};
 |]
     where
     slws = C.sizeMax . C.tagToSize . S.specLengthTag $ s
     sts = S.specTypeLength s
     sms = C.sizeMax . S.specSize $ s
+    sd = S.specDepth s
     ln = unpack (S.specName s)
