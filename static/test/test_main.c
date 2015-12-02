@@ -238,7 +238,7 @@ TEST test_decode_primitive(void) {
     ASSERT_EQ(caut_status_ok, init_stat);
 
     enum caut_status const dec_status =
-        caut_dec_put(sdi, buffer, buf_size, &decoded);
+        caut_dec_put(sdi, buffer, sizeof(buffer), &decoded);
 
     ASSERT_EQ(caut_status_ok, dec_status);
     ASSERT_EQ(4, decoded);
@@ -263,7 +263,7 @@ TEST test_decode_synonym(void) {
     ASSERT_EQ(caut_status_ok, init_stat);
 
     enum caut_status const dec_status =
-        caut_dec_put(sdi, buffer, buf_size, &decoded);
+        caut_dec_put(sdi, buffer, sizeof(buffer), &decoded);
 
     ASSERT_EQ(caut_status_ok, dec_status);
     ASSERT_EQ(4, decoded);
@@ -288,7 +288,7 @@ TEST test_decode_range(void) {
     ASSERT_EQ(caut_status_ok, init_stat);
 
     enum caut_status const dec_status =
-        caut_dec_put(sdi, buffer, buf_size, &decoded);
+        caut_dec_put(sdi, buffer, sizeof(buffer), &decoded);
 
     ASSERT_EQ(caut_status_ok, dec_status);
     ASSERT_EQ(2, decoded);
@@ -313,7 +313,7 @@ TEST test_decode_enumeration(void) {
     ASSERT_EQ(caut_status_ok, init_stat);
 
     enum caut_status const dec_status =
-        caut_dec_put(sdi, buffer, buf_size, &decoded);
+        caut_dec_put(sdi, buffer, sizeof(buffer), &decoded);
 
     ASSERT_EQ_FMT(caut_status_ok, dec_status, "%d");
     ASSERT_EQ(1, decoded);
@@ -339,7 +339,7 @@ TEST test_decode_array(void) {
     ASSERT_EQ(caut_status_ok, init_stat);
 
     enum caut_status const dec_status =
-        caut_dec_put(sdi, buffer, buf_size, &decoded);
+        caut_dec_put(sdi, buffer, sizeof(buffer), &decoded);
 
     ASSERT_EQ_FMT(caut_status_ok, dec_status, "%d");
     ASSERT_EQ(8, decoded);
@@ -366,7 +366,7 @@ TEST test_decode_vector(void) {
     ASSERT_EQ(caut_status_ok, init_stat);
 
     enum caut_status const dec_status =
-        caut_dec_put(sdi, buffer, buf_size, &decoded);
+        caut_dec_put(sdi, buffer, sizeof(buffer), &decoded);
 
     ASSERT_EQ_FMT(caut_status_ok, dec_status, "%d");
     ASSERT_EQ(5, decoded);
@@ -396,7 +396,7 @@ TEST test_decode_record(void) {
     ASSERT_EQ(caut_status_ok, init_stat);
 
     enum caut_status const dec_status =
-        caut_dec_put(sdi, buffer, buf_size, &decoded);
+        caut_dec_put(sdi, buffer, sizeof(buffer), &decoded);
 
     ASSERT_EQ_FMT(caut_status_ok, dec_status, "%d");
     ASSERT_EQ(0xBBAA, dec.a);
@@ -422,7 +422,7 @@ TEST test_decode_combination(void) {
     ASSERT_EQ(caut_status_ok, init_stat);
 
     enum caut_status const dec_status =
-        caut_dec_put(sdi, buffer, buf_size, &decoded);
+        caut_dec_put(sdi, buffer, sizeof(buffer), &decoded);
 
     ASSERT_EQ_FMT(caut_status_ok, dec_status, "%d");
     ASSERT_EQ_FMT(2, dec._flags, "%d");
@@ -446,7 +446,7 @@ TEST test_decode_union(void) {
     ASSERT_EQ(caut_status_ok, init_stat);
 
     enum caut_status const dec_status =
-        caut_dec_put(sdi, buffer, buf_size, &decoded);
+        caut_dec_put(sdi, buffer, sizeof(buffer), &decoded);
 
     ASSERT_EQ_FMT(caut_status_ok, dec_status, "%d");
     ASSERT_EQ_FMT(2, dec._tag, "%d");
