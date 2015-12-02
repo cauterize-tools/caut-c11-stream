@@ -56,6 +56,8 @@ static S caut_dec_put_byte_union(SDI * di, TD const * td, TDI * ti, bool * progr
 
 static size_t caut_tag_size(enum caut_tag tag);
 static void signed_convert(void const * in, size_t in_size, void * out, size_t out_size);
+static uint64_t mask_with_width(size_t width);
+static uint64_t flag_set_at(size_t width);
 
 static S caut_enc_get_byte(SEI * ei, uint8_t * byte, bool * progress) {
     TD const * td = NULL;
@@ -307,7 +309,8 @@ static S caut_enc_get_byte_combination(SEI * ei, TD const * td, TEI * ti, bool *
 
     if (iter->tag_iter.tag_position < caut_tag_size(desc->tag)) {
         // still accumulating tag
-        if (word > ((1 << desc->field_count) - 1)) {
+        uint64_t const mask = mask_with_width(desc->field_count);
+        if (word > mask) {
             return caut_status_err_invalid_combination;
         } else if (NULL == byte) {
             return caut_status_err_need_byte;
@@ -320,7 +323,7 @@ static S caut_enc_get_byte_combination(SEI * ei, TD const * td, TEI * ti, bool *
         }
     } else {
         while (iter->field_position < desc->field_count) {
-            uint64_t const field_flag = 1 << iter->field_position;
+            uint64_t const field_flag = flag_set_at(iter->field_position);
 
             if (0 == (field_flag & word)) {
                 iter->field_position += 1;
@@ -656,12 +659,13 @@ static S caut_dec_put_byte_combination(SDI * di, TD const * td, TDI * ti, bool *
 
         return caut_status_ok_busy;
     } else {
-        if (iter->tag_iter.tag_buffer > ((1 << desc->field_count) - 1)) {
+        uint64_t const mask = mask_with_width(desc->field_count);
+        if (iter->tag_iter.tag_buffer > mask) {
             return caut_status_err_invalid_combination;
         }
 
         while (iter->field_position < desc->field_count) {
-            uint64_t const field_flag = 1 << iter->field_position;
+            uint64_t const field_flag = flag_set_at(iter->field_position);
 
             if (0 == (field_flag & iter->tag_iter.tag_buffer)) {
                 iter->field_position += 1;
@@ -770,6 +774,27 @@ static void signed_convert(void const * in, size_t in_size, void * out, size_t o
     default:
         assert(false);
     }
+}
+
+static uint64_t mask_with_width(size_t width) {
+    assert(0 < width && width < 65);
+
+    uint64_t ret = 0;
+
+    for (size_t i = 0; i < width; i++) {
+        ret |= 1 << i;
+    }
+
+    return ret;
+}
+
+static uint64_t flag_set_at(size_t width) {
+    assert(width < 64);
+
+    uint64_t ret = 1;
+    ret <<= width;
+
+    return ret;
 }
 
 S caut_enc_get(SEI * ei, void * buf, size_t buf_size, size_t * enc_bytes) {
