@@ -16,8 +16,6 @@ hFileFromSpec s = unindent [i|
 
   #include "#{ln}_types.h"
   #include "#{ln}_descriptors.h"
-  #include "#{ln}_encode.h"
-  #include "#{ln}_decode.h"
 
   #endif /* #{guardSym} */
 |]
