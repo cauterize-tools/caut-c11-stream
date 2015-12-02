@@ -80,6 +80,7 @@ union caut_prototype {
 struct type_descriptor {
     char const * name;
     int type_id;
+    size_t obj_size;
     uint8_t fingerprint[20];
     enum caut_proto_tag prototype_tag;
     union caut_prototype prototype;

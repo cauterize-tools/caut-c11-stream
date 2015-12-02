@@ -58,12 +58,14 @@ cDescriptorsFromSpec s = unindent [i|
                          (M.lookup n n2declMap)
 
     descriptor t =
-      let n = ident2str (S.typeName t)
+      let n = ident2str ident
+          ident = S.typeName t
           tps = typeToPrimString t
       in chompNewline [i|
     {
       .name = "#{n}",
       .type_id = type_id_#{ln}_#{n},
+      .obj_size = sizeof(#{luDecl ident}),
       .fingerprint = {#{formatFp (S.typeFingerprint t)}},
       .prototype_tag = caut_proto_#{tps},
       .prototype.c_#{tps} = {
