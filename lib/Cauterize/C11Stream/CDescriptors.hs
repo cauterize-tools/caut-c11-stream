@@ -129,37 +129,37 @@ prototypeBody luDecl s (S.Type { S.typeName = n, S.typeDesc = d }) =
     S.Range { S.rangeOffset = ro, S.rangeLength = rl, S.rangeTag = rt, S.rangePrim = rp }
       -> chompNewline [i|
         .offset = #{ro},
-        .length = #{rl},
+        .length = #{rl}u,
         .tag = #{tagToTagEnumStr rt},
         .word_size = #{C.sizeMax . C.primToSize $ rp},|]
     S.Array { S.arrayRef = r, S.arrayLength = al }
       -> chompNewline [i|
         .ref_id = type_id_#{ln}_#{ident2str r},
-        .length = #{al},
+        .length = #{al}u,
         .elem_span = ARR_ELEM_SPAN(#{luDecl r}),|]
     S.Vector { S.vectorRef = r, S.vectorLength = vl }
       -> chompNewline [i|
         .ref_id = type_id_#{ln}_#{ident2str r},
-        .max_length = #{vl},
+        .max_length = #{vl}u,
         .elem_span = ARR_ELEM_SPAN(#{luDecl r}),
         .elem_offset = offsetof(struct #{ident2str n}, elems),|]
     S.Enumeration { S.enumerationTag = et, S.enumerationValues = evs }
       -> chompNewline [i|
         .tag = #{tagToTagEnumStr et},
-        .length = #{length evs},|]
+        .length = #{length evs}u,|]
     S.Record { S.recordFields = rs }
       -> chompNewline [i|
-        .field_count = #{length rs},
+        .field_count = #{length rs}u,
         .fields = record_fields_#{ln}_#{ident2str n},|]
     S.Combination { S.combinationFields = cf, S.combinationTag = ct }
       -> chompNewline [i|
         .tag = #{tagToTagEnumStr ct},
-        .field_count = #{length cf},
+        .field_count = #{length cf}u,
         .fields = combination_fields_#{ln}_#{ident2str n},|]
     S.Union { S.unionFields = uf, S.unionTag = ut }
       -> chompNewline [i|
         .tag = #{tagToTagEnumStr ut},
-        .field_count = #{length uf},
+        .field_count = #{length uf}u,
         .fields = union_fields_#{ln}_#{ident2str n},|]
   where
     ln = unpack (S.specName s)
