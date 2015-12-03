@@ -1,6 +1,6 @@
 {-# LANGUAGE QuasiQuotes #-}
 module Cauterize.C11Stream.CDescriptors
-       ( cDescriptorsFromSpec
+       ( cInfoFromSpec
        ) where
 
 import Cauterize.C11Stream.Util
@@ -17,12 +17,12 @@ import qualified Cauterize.Specification as S
 import qualified Cauterize.CommonTypes as C
 import qualified Cauterize.Hash as H
 
-cDescriptorsFromSpec :: S.Specification -> String
-cDescriptorsFromSpec s = unindent [i|
-  #include "#{ln}_descriptors.h"
+cInfoFromSpec :: S.Specification -> String
+cInfoFromSpec s = unindent [i|
+  #include "#{ln}_info.h"
   #include "#{ln}_types.h"
 
-  #include "cauterize_iterators.h"
+  #include "cauterize_info.h"
 
   #include <stdbool.h>
   #include <stdint.h>
@@ -33,13 +33,13 @@ cDescriptorsFromSpec s = unindent [i|
 
 #{fieldSets s types}
 
-  struct type_descriptor const type_descriptors_#{ln}[TYPE_COUNT_#{ln}] = {
-#{descriptorList}
+  struct type_info const type_info_#{ln}[TYPE_COUNT_#{ln}] = {
+#{infoList}
   };
 
-  struct schema_descriptor const schema_descriptor_#{ln} = {
+  struct schema_info const schema_info_#{ln} = {
     .type_count = TYPE_COUNT_#{ln},
-    .types = type_descriptors_#{ln},
+    .types = type_info_#{ln},
   };
 |]
   where
@@ -61,9 +61,10 @@ cDescriptorsFromSpec s = unindent [i|
           tps = typeToPrimString t
       in chompNewline [i|
     {
-      .name = "#{n}",
       .type_id = type_id_#{ln}_#{n},
-      .obj_size = sizeof(#{luDecl ident}),
+      .name = "#{n}",
+      .min_size = #{min_size},
+      .max_size = #{max_size},
       .fingerprint = {#{formatFp (S.typeFingerprint t)}},
       .prototype_tag = caut_proto_#{tps},
       .prototype.c_#{tps} = {
@@ -99,8 +100,8 @@ fieldSet s (S.Type { S.typeName = tn, S.typeDesc = d}) = n
 
 mkFieldSet :: String -> String -> S.Specification -> [S.Field] -> String
 mkFieldSet name proto s fs = chompNewline [i|
-  struct caut_field const #{proto}_fields_#{ln}_#{name}[] = {
-#{intercalate "\n" $ map (prototypeField s name) fs}
+  struct caut_field_info const #{proto}_field_infos_#{ln}_#{name}[] = {
+#{intercalate "\n" $ map (prototypeFieldInfo s name) fs}
   };
 |]
   where
@@ -109,10 +110,10 @@ mkFieldSet name proto s fs = chompNewline [i|
 prototypeField :: S.Specification -> String -> S.Field -> String
 prototypeField _ _ S.EmptyField { S.fieldName = n, S.fieldIndex = ix }
   = chompNewline [i|
-    { .name = "#{ident2str n}", .field_index = #{ix}, .data = false, .ref_id = 0, .offset = 0 },|]
+    { .name = "#{ident2str n}", .field_index = #{ix} },|]
 prototypeField s typeName S.DataField { S.fieldName = n, S.fieldIndex = ix, S.fieldRef = r }
   = chompNewline [i|
-    { .name = "#{n'}", .field_index = #{ix}, .data = true, .ref_id = type_id_#{ln}_#{r'}, .offset = offsetof(struct #{typeName}, #{n'}) },|]
+    { .name = "#{n'}", .field_index = #{ix}  },|]
   where
     ln = unpack (S.specName s)
     n' = ident2str n
