@@ -116,13 +116,11 @@ enum caut_status get_type_dec_iter(
 
 enum caut_status push_type_enc_iter(
     struct schema_encode_iterator * ei,
-    struct type_encode_iterator ** ti_out,
     int type_id,
     void const * type_base);
 
 enum caut_status push_type_dec_iter(
     struct schema_decode_iterator * di,
-    struct type_decode_iterator ** ti_out,
     int type_id,
     void * type_base);
 

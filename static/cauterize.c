@@ -107,12 +107,11 @@ static S caut_enc_get_byte_synonym(SEI * ei, TD const * td, TEI * ti, bool * pro
 
     struct iter_synonym * const iter = &ti->prototype.c_synonym;
     struct caut_synonym const * const desc = &td->prototype.c_synonym;
-    TEI * new_ti = NULL;
 
     *progress = false;
 
     if (iter->done == false) {
-        RE(push_type_enc_iter(ei, &new_ti, desc->ref_id, ti->type));
+        RE(push_type_enc_iter(ei, desc->ref_id, ti->type));
         iter->done = true;
 
         return caut_status_ok_pushed;
@@ -205,7 +204,6 @@ static S caut_enc_get_byte_enumeration(SEI * ei, TD const * td, TEI * ti, bool *
 static S caut_enc_get_byte_array(SEI * ei, TD const * td, TEI * ti, bool * progress, uint8_t * byte) {
     struct iter_array * const iter = &ti->prototype.c_array;
     struct caut_array const * const desc = &td->prototype.c_array;
-    TEI * new_ti = NULL;
 
     *progress = false;
     (void) byte;
@@ -216,7 +214,7 @@ static S caut_enc_get_byte_array(SEI * ei, TD const * td, TEI * ti, bool * progr
                 ((uintptr_t)ti->type) +
                 (desc->elem_span * iter->elem_position));
 
-        RE(push_type_enc_iter(ei, &new_ti, desc->ref_id, base));
+        RE(push_type_enc_iter(ei, desc->ref_id, base));
         iter->elem_position += 1;
 
         return caut_status_ok_pushed;
@@ -247,14 +245,13 @@ static S caut_enc_get_byte_vector(SEI * ei, TD const * td, TEI * ti, bool * prog
         }
     } else if (iter->elem_position < word) {
         // accumulating elements
-        TEI * new_ti = NULL;
         void const * base =
             (void *)(
                 ((uintptr_t)ti->type) +
                 desc->elem_offset +
                 (desc->elem_span * iter->elem_position));
 
-        RE(push_type_enc_iter(ei, &new_ti, desc->ref_id, base));
+        RE(push_type_enc_iter(ei, desc->ref_id, base));
         iter->elem_position += 1;
 
         return caut_status_ok_pushed;
@@ -272,13 +269,12 @@ static S caut_enc_get_byte_record(SEI * ei, TD const * td, TEI * ti, bool * prog
 
     if (iter->field_position < desc->field_count) {
         struct caut_field const * const field = &desc->fields[iter->field_position];
-        TEI * new_ti = NULL;
         void const * base = (void *)(((uintptr_t)ti->type) + field->offset);
 
         if (field->data == false) {
             return caut_status_err_invalid_record;
         } else {
-            RE(push_type_enc_iter(ei, &new_ti, field->ref_id, base));
+            RE(push_type_enc_iter(ei, field->ref_id, base));
             iter->field_position += 1;
         }
 
@@ -319,12 +315,11 @@ static S caut_enc_get_byte_combination(SEI * ei, TD const * td, TEI * ti, bool *
             } else {
                 struct caut_field const * const field = &desc->fields[iter->field_position];
                 void const * base = (void *)(((uintptr_t)ti->type) + field->offset);
-                TEI * new_ti = NULL;
 
                 iter->field_position += 1;
 
                 if (field->data) {
-                    RE(push_type_enc_iter(ei, &new_ti, field->ref_id, base));
+                    RE(push_type_enc_iter(ei, field->ref_id, base));
                     return caut_status_ok_pushed;
                 } else {
                     continue;
@@ -359,12 +354,11 @@ static S caut_enc_get_byte_union(SEI * ei, TD const * td, TEI * ti, bool * progr
     } else {
         struct caut_field const * const field = &desc->fields[word];
         void const * base = (void *)(((uintptr_t)ti->type) + field->offset);
-        TEI * new_ti = NULL;
 
         if (iter->field_done || !field->data) {
             return caut_status_ok_pop;
         } else {
-            RE(push_type_enc_iter(ei, &new_ti, field->ref_id, base));
+            RE(push_type_enc_iter(ei, field->ref_id, base));
             iter->field_done = true;
 
             return caut_status_ok_pushed;
@@ -438,14 +432,13 @@ static S caut_dec_put_byte_primitive(SDI * di, TD const * td, TDI * ti, bool * p
 static S caut_dec_put_byte_synonym(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte) {
     struct iter_synonym * const iter = &ti->prototype.c_synonym;
     struct caut_synonym const * const desc = &td->prototype.c_synonym;
-    TDI * new_ti = NULL;
 
     (void)byte;
 
     *progress = false;
 
     if (iter->done == false) {
-        RE(push_type_dec_iter(di, &new_ti, desc->ref_id, ti->type));
+        RE(push_type_dec_iter(di, desc->ref_id, ti->type));
         iter->done = true;
 
         return caut_status_ok_pushed;
@@ -543,7 +536,6 @@ static S caut_dec_put_byte_enumeration(SDI * di, TD const * td, TDI * ti, bool *
 static S caut_dec_put_byte_array(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte) {
     struct iter_array * const iter = &ti->prototype.c_array;
     struct caut_array const * const desc = &td->prototype.c_array;
-    TDI * new_ti = NULL;
 
     (void) byte;
 
@@ -554,7 +546,7 @@ static S caut_dec_put_byte_array(SDI * di, TD const * td, TDI * ti, bool * progr
             (void *)(
                 ((uintptr_t)ti->type) +
                 (desc->elem_span * iter->elem_position));
-        RE(push_type_dec_iter(di, &new_ti, desc->ref_id, base));
+        RE(push_type_dec_iter(di, desc->ref_id, base));
         iter->elem_position += 1;
         return caut_status_ok_pushed;
     } else {
@@ -567,7 +559,6 @@ static S caut_dec_put_byte_vector(SDI * di, TD const * td, TDI * ti, bool * prog
     struct caut_vector const * const desc = &td->prototype.c_vector;
     uint8_t * const b = (uint8_t *)&iter->tag_iter.tag_buffer;
     uint8_t * const t = (uint8_t *)ti->type;
-    TDI * new_ti = NULL;
 
     *progress = false;
 
@@ -597,7 +588,7 @@ static S caut_dec_put_byte_vector(SDI * di, TD const * td, TDI * ti, bool * prog
                 desc->elem_offset +
                 (desc->elem_span * iter->elem_position));
 
-        RE(push_type_dec_iter(di, &new_ti, desc->ref_id, base));
+        RE(push_type_dec_iter(di, desc->ref_id, base));
         iter->elem_position += 1;
 
         return caut_status_ok_pushed;
@@ -616,13 +607,12 @@ static S caut_dec_put_byte_record(SDI * di, TD const * td, TDI * ti, bool * prog
 
     if (iter->field_position < desc->field_count) {
         struct caut_field const * const field = &desc->fields[iter->field_position];
-        TDI * new_ti = NULL;
         void * const base = (void *)(((uintptr_t)ti->type) + field->offset);
 
         if (field->data == false) {
             return caut_status_err_invalid_record;
         } else {
-            RE(push_type_dec_iter(di, &new_ti, field->ref_id, base));
+            RE(push_type_dec_iter(di, field->ref_id, base));
             iter->field_position += 1;
         }
 
@@ -663,12 +653,11 @@ static S caut_dec_put_byte_combination(SDI * di, TD const * td, TDI * ti, bool *
             } else {
                 struct caut_field const * const field = &desc->fields[iter->field_position];
                 void * const base = (void *)(((uintptr_t)ti->type) + field->offset);
-                TDI * new_ti = NULL;
 
                 iter->field_position += 1;
 
                 if (field->data) {
-                    RE(push_type_dec_iter(di, &new_ti, field->ref_id, base));
+                    RE(push_type_dec_iter(di, field->ref_id, base));
                     return caut_status_ok_pushed;
                 } else {
                     continue;
@@ -698,7 +687,6 @@ static S caut_dec_put_byte_union(SDI * di, TD const * td, TDI * ti, bool * progr
     } else {
         struct caut_field const * const field = &desc->fields[iter->tag_iter.tag_buffer];
         void * const base = (void *)(((uintptr_t)ti->type) + field->offset);
-        TDI * new_ti = NULL;
 
         if (iter->tag_iter.tag_buffer > desc->field_count) {
             return caut_status_err_invalid_union;
@@ -708,7 +696,7 @@ static S caut_dec_put_byte_union(SDI * di, TD const * td, TDI * ti, bool * progr
         if (iter->field_done || !field->data) {
             return caut_status_ok_pop;
         } else {
-            RE(push_type_dec_iter(di, &new_ti, field->ref_id, base));
+            RE(push_type_dec_iter(di, field->ref_id, base));
             iter->field_done = true;
 
             return caut_status_ok_pushed;
