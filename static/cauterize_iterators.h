@@ -106,22 +106,6 @@ struct schema_decode_iterator {
     void * dst_type;
 };
 
-enum caut_status schema_encode_iterator_init(
-    struct schema_encode_iterator * si,
-    struct schema_descriptor const * sd,
-    struct type_encode_iterator * ti,
-    size_t ti_count,
-    int type_id,
-    void const * src_type);
-
-enum caut_status schema_decode_iterator_init(
-    struct schema_decode_iterator * si,
-    struct schema_descriptor const * sd,
-    struct type_decode_iterator * ti,
-    size_t ti_count,
-    int type_id,
-    void * dst_type);
-
 enum caut_status get_type_enc_iter(
     struct schema_encode_iterator const * ei,
     struct type_encode_iterator ** ti_out);

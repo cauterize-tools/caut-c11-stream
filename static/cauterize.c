@@ -18,18 +18,6 @@
 #define SEI struct schema_encode_iterator
 #define SDI struct schema_decode_iterator
 
-// #define DEBUG_QUIET 1
-
-#if defined(NDEBUG) || defined(DEBUG_QUIET)
-#define DEBUG_CHAR(c)
-#define DEBUG_CHAR_IF(cond, c)
-#define DEBUG_FMT(fmt, ...)
-#else
-#define DEBUG_CHAR(c) do { fputc(c, stderr); fflush(stderr); } while (0)
-#define DEBUG_CHAR_IF(cond, c) do { if (cond) { DEBUG_CHAR(c); } } while (0)
-#define DEBUG_FMT(fmt, ...) do { fprintf(stderr, fmt, __VA_ARGS__); fflush(stderr); } while (0)
-#endif
-
 #define STATE_CHECK(cond) do { if (!(cond)) { return caut_status_err_bad_state; } } while (0)
 
 static S caut_enc_get_byte(SEI * ei, uint8_t * byte, bool * progress);
@@ -953,4 +941,32 @@ S caut_dec_put(SDI * di, void const * buf, size_t buf_size, size_t * dec_bytes) 
     DEBUG_FMT("\nret = %d\n", ret);
 
     return ret;
+}
+
+S schema_encode_iterator_init(SEI * si, SD const * sd, TEI * ti, size_t ti_count, int type_id, void const * src_type) {
+    RE(id_check(sd, type_id));
+
+    si->desc = sd;
+    si->iters = ti;
+    si->iter_count = ti_count;
+    si->iter_top = 0;
+    si->src_type = src_type;
+
+    RE(type_encode_iterator_init(sd, ti, type_id, src_type));
+
+    return caut_status_ok;
+}
+
+S schema_decode_iterator_init(SDI * si, SD const * sd, TDI * ti, size_t ti_count, int type_id, void * dst_type) {
+    RE(id_check(sd, type_id));
+
+    si->desc = sd;
+    si->iters = ti;
+    si->iter_count = ti_count;
+    si->iter_top = 0;
+    si->dst_type = dst_type;
+
+    RE(type_decode_iterator_init(sd, ti, type_id, dst_type));
+
+    return caut_status_ok;
 }
