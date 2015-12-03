@@ -3,6 +3,10 @@
 
 #include "cauterize_types.h"
 
+#include <stddef.h>
+#include <stdint.h>
+
+
 // return error if error
 #define RE(EXP) \
     do { \
@@ -11,7 +15,7 @@
         } \
     } while(0)
 
-// #define DEBUG_QUIET 1
+#define DEBUG_QUIET 1
 
 #if defined(NDEBUG) || defined(DEBUG_QUIET)
 #define DEBUG_CHAR(c)
@@ -23,6 +27,19 @@
 #define DEBUG_FMT(fmt, ...) do { fprintf(stderr, fmt, __VA_ARGS__); fflush(stderr); } while (0)
 #endif
 
+#define S enum caut_status
+#define SD struct schema_descriptor
+#define TD struct type_descriptor
+#define TEI struct type_encode_iterator
+#define TDI struct type_decode_iterator
+#define SEI struct schema_encode_iterator
+#define SDI struct schema_decode_iterator
 
+#define STATE_CHECK(cond) do { if (!(cond)) { return caut_status_err_bad_state; } } while (0)
+
+size_t caut_tag_size(enum caut_tag tag);
+void signed_convert(void const * in, size_t in_size, void * out, size_t out_size);
+uint64_t mask_with_width(size_t width);
+uint64_t flag_set_at(size_t width);
 
 #endif /* CAUTERIZE_UTIL_H */
