@@ -43,34 +43,6 @@ S type_decode_iterator_init(SD const * sd, TDI * ti, int type_id, void * type) {
     return caut_status_ok;
 }
 
-S schema_encode_iterator_init(SEI * si, SD const * sd, TEI * ti, size_t ti_count, int type_id, void const * src_type) {
-    RE(id_check(sd, type_id));
-
-    si->desc = sd;
-    si->iters = ti;
-    si->iter_count = ti_count;
-    si->iter_top = 0;
-    si->src_type = src_type;
-
-    RE(type_encode_iterator_init(sd, ti, type_id, src_type));
-
-    return caut_status_ok;
-}
-
-S schema_decode_iterator_init(SDI * si, SD const * sd, TDI * ti, size_t ti_count, int type_id, void * dst_type) {
-    RE(id_check(sd, type_id));
-
-    si->desc = sd;
-    si->iters = ti;
-    si->iter_count = ti_count;
-    si->iter_top = 0;
-    si->dst_type = dst_type;
-
-    RE(type_decode_iterator_init(sd, ti, type_id, dst_type));
-
-    return caut_status_ok;
-}
-
 S get_type_enc_iter(SEI const * ei, TEI ** ti_out) {
     if (ei->iter_top < ei->iter_count) {
         *ti_out = &ei->iters[ei->iter_top];
@@ -89,18 +61,22 @@ S get_type_dec_iter(SDI const * di, TDI ** ti_out) {
     }
 }
 
-S push_type_enc_iter(SEI * ei, TEI ** ti_out, int type_id, void const * type_base) {
+S push_type_enc_iter(SEI * ei, int type_id, void const * type_base) {
+    TEI * ti_out = NULL;
+
     ei->iter_top += 1;
-    RE(get_type_enc_iter(ei, ti_out));
-    RE(type_encode_iterator_init(ei->desc, *ti_out, type_id, type_base));
+    RE(get_type_enc_iter(ei, &ti_out));
+    RE(type_encode_iterator_init(ei->desc, ti_out, type_id, type_base));
 
     return caut_status_ok;
 }
 
-S push_type_dec_iter(SDI * di, TDI ** ti_out, int type_id, void * type_base) {
+S push_type_dec_iter(SDI * di, int type_id, void * type_base) {
+    TDI * ti_out = NULL;
+
     di->iter_top += 1;
-    RE(get_type_dec_iter(di, ti_out));
-    RE(type_decode_iterator_init(di->desc, *ti_out, type_id, type_base));
+    RE(get_type_dec_iter(di, &ti_out));
+    RE(type_decode_iterator_init(di->desc, ti_out, type_id, type_base));
 
     return caut_status_ok;
 }

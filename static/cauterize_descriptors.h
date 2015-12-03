@@ -6,20 +6,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-enum primitive_type_id {
-  primitive_type_id_bool = -11,
-  primitive_type_id_f64 = -10,
-  primitive_type_id_f32 = -9,
-  primitive_type_id_s64 = -8,
-  primitive_type_id_s32 = -7,
-  primitive_type_id_s16 = -6,
-  primitive_type_id_s8 = -5,
-  primitive_type_id_u64 = -4,
-  primitive_type_id_u32 = -3,
-  primitive_type_id_u16 = -2,
-  primitive_type_id_u8 = -1,
-};
-
 struct caut_field {
     char const * name;
     size_t field_index;

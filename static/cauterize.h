@@ -19,4 +19,20 @@ enum caut_status caut_dec_put(
     size_t buf_size,
     size_t * dec_bytes);
 
+enum caut_status schema_encode_iterator_init(
+    struct schema_encode_iterator * si,
+    struct schema_descriptor const * sd,
+    struct type_encode_iterator * ti,
+    size_t ti_count,
+    int type_id,
+    void const * src_type);
+
+enum caut_status schema_decode_iterator_init(
+    struct schema_decode_iterator * si,
+    struct schema_descriptor const * sd,
+    struct type_decode_iterator * ti,
+    size_t ti_count,
+    int type_id,
+    void * dst_type);
+
 #endif /* CAUTERIZE_H */
