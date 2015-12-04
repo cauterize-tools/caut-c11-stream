@@ -169,6 +169,8 @@ S caut_dec_put(SDI * di, void const * buf, size_t buf_size, size_t * dec_bytes) 
 S schema_encode_iterator_init(SEI * si, SD const * sd, TEI * ti, size_t ti_count, int type_id, void const * src_type) {
     RE(id_check(sd, type_id));
 
+    memset(si, 0, sizeof(*si));
+
     si->desc = sd;
     si->iters = ti;
     si->iter_count = ti_count;
@@ -182,6 +184,8 @@ S schema_encode_iterator_init(SEI * si, SD const * sd, TEI * ti, size_t ti_count
 
 S schema_decode_iterator_init(SDI * si, SD const * sd, TDI * ti, size_t ti_count, int type_id, void * dst_type) {
     RE(id_check(sd, type_id));
+
+    memset(si, 0, sizeof(*si));
 
     si->desc = sd;
     si->iters = ti;
