@@ -34,6 +34,11 @@ static int run_client(FILE * si, FILE * so) {
         return __LINE__;
     }
 
+    if (0 == length) {
+        fprintf(stderr, "Length is 0.\n");
+        return __LINE__;
+    }
+
     if (!read_exactly(si, type, schema_tag_size, &rlen)) {
         fprintf(stderr, "Type expected %lu bytes but got %lu bytes.\n",
                 schema_tag_size, rlen);
@@ -57,7 +62,11 @@ static int run_client(FILE * si, FILE * so) {
 
     void * out_buffer = calloc(length, sizeof(uint8_t));
     int const tret = transcode(buffer, out_buffer, length, t);
-    if (0 != tret) { return tret; }
+
+    if (0 != tret) {
+        free(out_buffer);
+        return tret;
+    }
 
     if (schema_length_word_size != fwrite(&length, 1, schema_length_word_size, so)) {
         fprintf(stderr, "Could not completely write length.\n");
