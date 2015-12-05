@@ -10,6 +10,14 @@
 #include <assert.h>
 #include <stdio.h>
 
+#define S enum caut_status
+#define SD struct schema_descriptor
+#define TD struct type_descriptor
+#define TEI struct type_encode_iterator
+#define TDI struct type_decode_iterator
+#define SEI struct schema_encode_iterator
+#define SDI struct schema_decode_iterator
+
 S caut_enc_get(SEI * ei, void * buf, size_t buf_size, size_t * enc_bytes) {
     S ret = caut_status_ok_busy;
 
