@@ -85,6 +85,7 @@ TEST test_encode_range(void) {
 
     ASSERT_EQ(caut_status_ok, enc_status);
     ASSERT_EQ(2, encoded);
+    ASSERT_EQ_FMT((uint16_t)(enc - (-1000)), *((uint16_t *)enc_buffer), "%d");
 
     PASS();
 }
@@ -507,13 +508,17 @@ TEST test_big_range_enc(void) {
 
     ASSERT_EQ(caut_status_ok, enc_status);
     ASSERT_EQ(8, encoded);
+    ASSERT_EQ_FMT(enc - 195922, *((uint64_t *)enc_buffer), "%llX");
 
     PASS();
 }
 
 TEST test_big_range_dec(void) {
     rng_big_unsigned const reference = 2624738754863070707;
-    uint8_t const * const ref_buf = (uint8_t const *)&reference;
+
+    rng_big_unsigned const encoded = reference - 195922;
+    uint8_t const * const decode_from = (uint8_t const *)&encoded;
+
     size_t decoded = 0;
     rng_big_unsigned dec = 0;
 
@@ -527,10 +532,11 @@ TEST test_big_range_dec(void) {
     ASSERT_EQ(caut_status_ok, init_stat);
 
     enum caut_status const dec_status =
-        caut_dec_put(sdi, ref_buf, sizeof(reference), &decoded);
+        caut_dec_put(sdi, decode_from, sizeof(encoded), &decoded);
 
     ASSERT_EQ(caut_status_ok, dec_status);
     ASSERT_EQ(8, decoded);
+    ASSERT_EQ_FMT(reference, dec, "%llu");
 
     PASS();
 }
@@ -540,14 +546,12 @@ TEST test_big_range_round_trip(void) {
 
     size_t encoded = 0;
     {
-        rng_big_unsigned const enc = reference;
-
         enum caut_status const init_stat =
             schema_encode_iterator_init(
                 sei, sd, tei,
                 SCHEMA_DEPTH_caut_test,
                 type_id_caut_test_rng_big_unsigned,
-                &enc);
+                &reference);
 
         ASSERT_EQ(caut_status_ok, init_stat);
 
@@ -585,6 +589,32 @@ TEST test_big_range_round_trip(void) {
     PASS();
 }
 
+TEST test_range_breaks_with_new_clang(void) {
+    breaks_new_clang const ref = 1759352636039645935;
+    breaks_new_clang dec = 0;
+    uint8_t const buffer[] = {0xcd, 0x85, 0xc7, 0xa9, 0xe6, 0x79, 0x6a, 0x18};
+    size_t decoded = 0;
+
+    enum caut_status const init_stat =
+        schema_decode_iterator_init(
+            sdi, sd, tdi,
+            SCHEMA_DEPTH_caut_test,
+            type_id_caut_test_breaks_new_clang,
+            &dec);
+
+    ASSERT_EQ(caut_status_ok, init_stat);
+
+    enum caut_status const dec_status =
+        caut_dec_put(sdi, buffer, sizeof(buffer), &decoded);
+
+    ASSERT_EQ(caut_status_ok, dec_status);
+    ASSERT_EQ(8, decoded);
+
+    ASSERT_EQ_FMT(ref, dec, "%016llX");
+
+    PASS();
+}
+
 SUITE(encode) {
     RUN_TEST(test_encode_primitive);
     RUN_TEST(test_encode_synonym);
@@ -614,6 +644,7 @@ SUITE(corner) {
     RUN_TEST(test_big_range_enc);
     RUN_TEST(test_big_range_dec);
     RUN_TEST(test_big_range_round_trip);
+    RUN_TEST(test_range_breaks_with_new_clang);
 }
 
 GREATEST_MAIN_DEFS();
