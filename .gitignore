@@ -1,2 +1,4 @@
 .stack-work
 *.dSYM
+.DS_Store
+crucible-*
