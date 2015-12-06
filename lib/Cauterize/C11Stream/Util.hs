@@ -6,6 +6,7 @@ module Cauterize.C11Stream.Util
   , prim2c
   , chompNewline
   , tag2c
+  , typeToPrimString
   ) where
 
 import Data.Text (unpack)
@@ -60,3 +61,16 @@ tag2c C.T1 = "caut_tag8_t";
 tag2c C.T2 = "caut_tag16_t";
 tag2c C.T4 = "caut_tag32_t";
 tag2c C.T8 = "caut_tag64_t";
+
+typeToPrimString :: S.Type -> String
+typeToPrimString S.Type { S.typeDesc = d } = n
+  where
+    n = case d of
+      S.Synonym {}     -> "synonym"
+      S.Range {}       -> "range"
+      S.Array {}       -> "array"
+      S.Vector {}      -> "vector"
+      S.Enumeration {} -> "enumeration"
+      S.Record {}      -> "record"
+      S.Combination {} -> "combination"
+      S.Union {}       -> "union"

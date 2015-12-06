@@ -18,9 +18,8 @@
 #define F64_ID (-10)
 #define BOOL_ID (-11)
 
-#define PROTO_DESC(NAME, ID, SIZE) \
+#define PROTO_DESC(ID, SIZE) \
     { \
-        .name = NAME, \
         .type_id = ID, \
         .prototype_tag = caut_proto_primitive, \
         .prototype.c_primitive = { .word_size = SIZE }, \
@@ -29,17 +28,17 @@
 int const min_prim_id = -11; // bool
 
 struct type_descriptor const primitive_descriptors[CAUT_PRIMITIVE_COUNT] = {
-    PROTO_DESC("u8", U8_ID, 1),
-    PROTO_DESC("u16", U16_ID, 2),
-    PROTO_DESC("u32", U32_ID, 4),
-    PROTO_DESC("u64", U64_ID, 8),
-    PROTO_DESC("s8", S8_ID, 1),
-    PROTO_DESC("s16", S16_ID, 2),
-    PROTO_DESC("s32", S32_ID, 4),
-    PROTO_DESC("s64", S64_ID, 8),
-    PROTO_DESC("f32", F32_ID, 4),
-    PROTO_DESC("f64", F64_ID, 8),
-    PROTO_DESC("bool", BOOL_ID, 1),
+    PROTO_DESC(U8_ID, 1),
+    PROTO_DESC(U16_ID, 2),
+    PROTO_DESC(U32_ID, 4),
+    PROTO_DESC(U64_ID, 8),
+    PROTO_DESC(S8_ID, 1),
+    PROTO_DESC(S16_ID, 2),
+    PROTO_DESC(S32_ID, 4),
+    PROTO_DESC(S64_ID, 8),
+    PROTO_DESC(F32_ID, 4),
+    PROTO_DESC(F64_ID, 8),
+    PROTO_DESC(BOOL_ID, 1),
 };
 
 S id_check(SD const * sd_set, int type_id) {
