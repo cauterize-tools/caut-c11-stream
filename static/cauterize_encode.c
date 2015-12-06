@@ -5,6 +5,14 @@
 #include <string.h>
 #include <assert.h>
 
+#define S enum caut_status
+#define SD struct schema_descriptor
+#define TD struct type_descriptor
+#define TEI struct type_encode_iterator
+#define TDI struct type_decode_iterator
+#define SEI struct schema_encode_iterator
+#define SDI struct schema_decode_iterator
+
 static S caut_enc_get_byte_primitive(SEI * ei, TD const * td, TEI * ti, bool * progress, uint8_t * byte);
 static S caut_enc_get_byte_synonym(SEI * ei, TD const * td, TEI * ti, bool * progress, uint8_t * byte);
 static S caut_enc_get_byte_range(SEI * ei, TD const * td, TEI * ti, bool * progress, uint8_t * byte);
@@ -101,43 +109,42 @@ static S caut_enc_get_byte_range(SEI * ei, TD const * td, TEI * ti, bool * progr
     (void) ei;
 
     if (iter->tag_iter.tag_position < caut_tag_size(desc->tag)) {
-        uint8_t * b = NULL;
+        union {
+            uint64_t u;
+            int64_t s;
+            uint8_t b[sizeof(uint64_t)];
+        } tag = { .u = 0 };
 
         if (desc->offset < 0) {
             int64_t const rmin = desc->offset;
             int64_t const rmax = desc->offset + desc->length;
 
-            int64_t s = 0;
-            signed_convert(ti->type, desc->word_size, &s, sizeof(s));
+            signed_convert(ti->type, desc->word_size, &tag.s, sizeof(tag.s));
 
-            if (s < rmin || rmax < s) {
+            if (tag.s < rmin || rmax < tag.s) {
                 return caut_status_err_invalid_range;
             } else {
-                s -= desc->offset;
+                tag.s -= desc->offset;
             }
 
-            b = (uint8_t *) &s;
         } else {
             uint64_t const rmin = desc->offset;
             uint64_t const rmax = desc->offset + desc->length;
 
-            uint64_t u = 0;
-            memcpy(&u, ti->type, desc->word_size);
+            memcpy(&tag.u, ti->type, desc->word_size);
 
-            if (u < rmin || rmax < u) {
+            if (tag.u < rmin || rmax < tag.u) {
                 return caut_status_err_invalid_range;
             } else {
-                u -= (uint64_t)desc->offset;
+                tag.u -= (uint64_t)desc->offset;
             }
-
-            b = (uint8_t *) &u;
         }
 
         if (NULL == byte) {
             return caut_status_err_need_byte;
         } else {
             *progress = true;
-            *byte = b[iter->tag_iter.tag_position];
+            *byte = tag.b[iter->tag_iter.tag_position];
             iter->tag_iter.tag_position += 1;
 
             return caut_status_ok_busy;

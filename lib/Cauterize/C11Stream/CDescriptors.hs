@@ -38,6 +38,8 @@ cDescriptorsFromSpec s = unindent [i|
   };
 
   struct schema_descriptor const schema_descriptor_#{ln} = {
+    .name = "#{ln}",
+    .fingerprint = {#{formatFp (S.specFingerprint s)}},
     .type_count = TYPE_COUNT_#{ln},
     .types = type_descriptors_#{ln},
   };

@@ -10,6 +10,14 @@
 #include <assert.h>
 #include <stdio.h>
 
+#define S enum caut_status
+#define SD struct schema_descriptor
+#define TD struct type_descriptor
+#define TEI struct type_encode_iterator
+#define TDI struct type_decode_iterator
+#define SEI struct schema_encode_iterator
+#define SDI struct schema_decode_iterator
+
 S caut_enc_get(SEI * ei, void * buf, size_t buf_size, size_t * enc_bytes) {
     S ret = caut_status_ok_busy;
 
@@ -169,6 +177,8 @@ S caut_dec_put(SDI * di, void const * buf, size_t buf_size, size_t * dec_bytes) 
 S schema_encode_iterator_init(SEI * si, SD const * sd, TEI * ti, size_t ti_count, int type_id, void const * src_type) {
     RE(id_check(sd, type_id));
 
+    memset(si, 0, sizeof(*si));
+
     si->desc = sd;
     si->iters = ti;
     si->iter_count = ti_count;
@@ -182,6 +192,8 @@ S schema_encode_iterator_init(SEI * si, SD const * sd, TEI * ti, size_t ti_count
 
 S schema_decode_iterator_init(SDI * si, SD const * sd, TDI * ti, size_t ti_count, int type_id, void * dst_type) {
     RE(id_check(sd, type_id));
+
+    memset(si, 0, sizeof(*si));
 
     si->desc = sd;
     si->iters = ti;

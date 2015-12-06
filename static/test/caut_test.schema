@@ -5,6 +5,7 @@
 (type rng0 range -1000 100)
 (type rng1 range 1000 1100)
 (type rng_big_unsigned range 195922 2677142814924770608)
+(type breaks_new_clang range 181538 13054296747032613673)
 (type en0 enumeration
       (values en_a en_b en_c))
 (type arr array syn 2)

@@ -5,6 +5,14 @@
 #include <string.h>
 #include <assert.h>
 
+#define S enum caut_status
+#define SD struct schema_descriptor
+#define TD struct type_descriptor
+#define TEI struct type_encode_iterator
+#define TDI struct type_decode_iterator
+#define SEI struct schema_encode_iterator
+#define SDI struct schema_decode_iterator
+
 static S caut_dec_put_byte_primitive(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte);
 static S caut_dec_put_byte_synonym(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte);
 static S caut_dec_put_byte_range(SDI * di, TD const * td, TDI * ti, bool * progress, uint8_t const * byte);

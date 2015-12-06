@@ -87,6 +87,8 @@ struct type_descriptor {
 };
 
 struct schema_descriptor {
+    char const * name;
+    uint8_t fingerprint[20];
     size_t type_count;
     struct type_descriptor const * types;
 };
