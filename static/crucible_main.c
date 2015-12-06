@@ -8,6 +8,7 @@
 
 #include "crucible_interface.h"
 #include "cauterize.h"
+#include "cauterize_info.h"
 
 static bool read_exactly(FILE * fd, void * buf, size_t nbyte, size_t * rbyte);
 static int run_client(FILE * si, FILE * so);
@@ -88,11 +89,13 @@ static int run_client(FILE * si, FILE * so) {
 
 static struct type_descriptor const * find_type(uint8_t * tag, size_t taglen) {
     struct schema_descriptor const * const sd = schema_schema_descriptor;
+    struct schema_info const * const si = schema_schema_info;
 
     for (size_t i = 0; i < sd->type_count; i++) {
         struct type_descriptor const * const td = &sd->types[i];
+        struct type_info const * const ti = &si->types[i];
 
-        if (0 == memcmp(tag, td->fingerprint, taglen)) {
+        if (0 == memcmp(tag, ti->fingerprint, taglen)) {
             return td;
         }
     }

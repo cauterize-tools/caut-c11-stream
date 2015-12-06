@@ -34,9 +34,6 @@ hDescriptorsFromSpec s = unindent [i|
   /* a descriptor for the entire schema */
   extern struct schema_descriptor const schema_descriptor_#{ln};
 
-  /* an array of type descriptors */
-  extern struct type_descriptor const type_descriptors_#{ln}[TYPE_COUNT_#{ln}];
-
   #endif /* #{guardSym} */
 |]
   where

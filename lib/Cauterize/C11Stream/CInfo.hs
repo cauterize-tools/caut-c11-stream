@@ -1,5 +1,5 @@
 {-# LANGUAGE QuasiQuotes #-}
-module Cauterize.C11Stream.CDescriptors
+module Cauterize.C11Stream.CInfo
        ( cInfoFromSpec
        ) where
 
@@ -12,7 +12,6 @@ import Data.List (intercalate)
 import Data.Maybe
 import Numeric (showHex)
 
-import qualified Data.Map as M
 import qualified Cauterize.Specification as S
 import qualified Cauterize.CommonTypes as C
 import qualified Cauterize.Hash as H
@@ -38,6 +37,8 @@ cInfoFromSpec s = unindent [i|
   };
 
   struct schema_info const schema_info_#{ln} = {
+    .name = "#{ln}",
+    .fingerprint = {#{formatFp (S.specFingerprint s)}},
     .type_count = TYPE_COUNT_#{ln},
     .types = type_info_#{ln},
   };
@@ -45,31 +46,30 @@ cInfoFromSpec s = unindent [i|
   where
     ln = unpack (S.specName s)
     types = S.specTypes s
-    descriptorList = intercalate "\n" $ map descriptor types
+    infoList = intercalate "\n" $ map info types
+    min_size = C.sizeMin (S.specSize s)
+    max_size = C.sizeMax (S.specSize s)
 
     -- Names to how you delcare that name
-    n2declMap = let s' = S.specTypes s
-                    d = map t2decl s'
-                    n = fmap S.typeName s'
-                in primDeclMap `M.union` M.fromList (zip n d)
-    luDecl n = fromMaybe (error $ "Invalid name: " ++ unpack (C.unIdentifier n) ++ ".")
-                         (M.lookup n n2declMap)
-
-    descriptor t =
+    info t =
       let n = ident2str ident
           ident = S.typeName t
           tps = typeToPrimString t
+          proto =
+            case prototypeBody s t of
+              Nothing -> [i|      /* No extra information for #{tps} #{n}. */|]
+              Just s' -> chompNewline [i|
+      .prototype.i_#{tps} = {
+#{s'}
+      },|]
       in chompNewline [i|
     {
-      .type_id = type_id_#{ln}_#{n},
       .name = "#{n}",
       .min_size = #{min_size},
       .max_size = #{max_size},
       .fingerprint = {#{formatFp (S.typeFingerprint t)}},
       .prototype_tag = caut_proto_#{tps},
-      .prototype.c_#{tps} = {
-#{prototypeBody luDecl s t}
-      },
+#{proto}
     },|]
 
 formatFp :: H.Hash -> String
@@ -93,7 +93,7 @@ fieldSet s (S.Type { S.typeName = tn, S.typeDesc = d}) = n
       S.Range {}       -> Nothing
       S.Array {}       -> Nothing
       S.Vector {}      -> Nothing
-      S.Enumeration {} -> Nothing
+      S.Enumeration { S.enumerationValues = evs } -> Just $ mkValueSet tn' "enumeration" s evs
       S.Record { S.recordFields = fs} -> Just $ mkFieldSet tn' "record" s fs
       S.Combination { S.combinationFields = fs } -> Just $ mkFieldSet tn' "combination" s fs
       S.Union { S.unionFields = fs } -> Just $ mkFieldSet tn' "union" s fs
@@ -101,72 +101,51 @@ fieldSet s (S.Type { S.typeName = tn, S.typeDesc = d}) = n
 mkFieldSet :: String -> String -> S.Specification -> [S.Field] -> String
 mkFieldSet name proto s fs = chompNewline [i|
   struct caut_field_info const #{proto}_field_infos_#{ln}_#{name}[] = {
-#{intercalate "\n" $ map (prototypeFieldInfo s name) fs}
+#{intercalate "\n" $ map prototypeFieldInfo fs}
   };
 |]
   where
     ln = unpack (S.specName s)
 
-prototypeField :: S.Specification -> String -> S.Field -> String
-prototypeField _ _ S.EmptyField { S.fieldName = n, S.fieldIndex = ix }
+mkValueSet :: String -> String -> S.Specification -> [S.EnumVal] -> String
+mkValueSet name proto s fs = chompNewline [i|
+  struct caut_field_info const #{proto}_field_infos_#{ln}_#{name}[] = {
+#{intercalate "\n" $ map ev fs}
+  };
+|]
+  where
+    ln = unpack (S.specName s)
+    ev (S.EnumVal v ix) = [i|    { .name = "#{ident2str v}", .field_index = #{ix} },|]
+
+prototypeFieldInfo :: S.Field -> String
+prototypeFieldInfo S.EmptyField { S.fieldName = n, S.fieldIndex = ix }
   = chompNewline [i|
     { .name = "#{ident2str n}", .field_index = #{ix} },|]
-prototypeField s typeName S.DataField { S.fieldName = n, S.fieldIndex = ix, S.fieldRef = r }
+prototypeFieldInfo S.DataField { S.fieldName = n, S.fieldIndex = ix }
   = chompNewline [i|
     { .name = "#{n'}", .field_index = #{ix}  },|]
   where
-    ln = unpack (S.specName s)
     n' = ident2str n
-    r' = ident2str r
 
-
-prototypeBody :: (C.Identifier -> String) -> S.Specification -> S.Type -> String
-prototypeBody luDecl s (S.Type { S.typeName = n, S.typeDesc = d }) =
+prototypeBody :: S.Specification -> S.Type -> Maybe String
+prototypeBody s (S.Type { S.typeName = n, S.typeDesc = d }) =
   case d of
-    S.Synonym { S.synonymRef = r }
-      -> chompNewline [i|
-        .ref_id = type_id_#{ln}_#{ident2str r},|]
-    S.Range { S.rangeOffset = ro, S.rangeLength = rl, S.rangeTag = rt, S.rangePrim = rp }
-      -> chompNewline [i|
-        .offset = #{ro},
-        .length = #{rl}u,
-        .tag = #{tagToTagEnumStr rt},
-        .word_size = #{C.sizeMax . C.primToSize $ rp},|]
-    S.Array { S.arrayRef = r, S.arrayLength = al }
-      -> chompNewline [i|
-        .ref_id = type_id_#{ln}_#{ident2str r},
-        .length = #{al}u,
-        .elem_span = ARR_ELEM_SPAN(#{luDecl r}),|]
-    S.Vector { S.vectorRef = r, S.vectorLength = vl, S.vectorTag = vt }
-      -> chompNewline [i|
-        .ref_id = type_id_#{ln}_#{ident2str r},
-        .max_length = #{vl}u,
-        .tag = #{tagToTagEnumStr vt},
-        .elem_span = ARR_ELEM_SPAN(#{luDecl r}),
-        .elem_offset = offsetof(struct #{ident2str n}, elems),|]
-    S.Enumeration { S.enumerationTag = et, S.enumerationValues = evs }
-      -> chompNewline [i|
-        .tag = #{tagToTagEnumStr et},
-        .length = #{length evs}u,|]
+    S.Enumeration { S.enumerationValues = evs }
+      -> Just $ chompNewline [i|
+        .field_count = #{length evs}u,
+        .fields = enumeration_field_infos_#{ln}_#{ident2str n},|]
     S.Record { S.recordFields = rs }
-      -> chompNewline [i|
+      -> Just $ chompNewline [i|
         .field_count = #{length rs}u,
-        .fields = record_fields_#{ln}_#{ident2str n},|]
-    S.Combination { S.combinationFields = cf, S.combinationTag = ct }
-      -> chompNewline [i|
-        .tag = #{tagToTagEnumStr ct},
+        .fields = record_field_infos_#{ln}_#{ident2str n},|]
+    S.Combination { S.combinationFields = cf }
+      -> Just $ chompNewline [i|
         .field_count = #{length cf}u,
-        .fields = combination_fields_#{ln}_#{ident2str n},|]
-    S.Union { S.unionFields = uf, S.unionTag = ut }
-      -> chompNewline [i|
-        .tag = #{tagToTagEnumStr ut},
+        .fields = combination_field_infos_#{ln}_#{ident2str n},|]
+    S.Union { S.unionFields = uf }
+      -> Just $ chompNewline [i|
         .field_count = #{length uf}u,
-        .fields = union_fields_#{ln}_#{ident2str n},|]
+        .fields = union_field_infos_#{ln}_#{ident2str n},|]
+    _ -> Nothing
   where
     ln = unpack (S.specName s)
-
-tagToTagEnumStr :: C.Tag -> String
-tagToTagEnumStr C.T1 = "caut_tag_8"
-tagToTagEnumStr C.T2 = "caut_tag_16"
-tagToTagEnumStr C.T4 = "caut_tag_32"
-tagToTagEnumStr C.T8 = "caut_tag_64"

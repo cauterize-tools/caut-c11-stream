@@ -7,7 +7,6 @@
 #include <stddef.h>
 
 struct caut_field {
-    char const * name;
     size_t field_index;
     bool data;
     int ref_id;
@@ -78,17 +77,13 @@ union caut_prototype {
 };
 
 struct type_descriptor {
-    char const * name;
     int type_id;
     size_t obj_size;
-    uint8_t fingerprint[20];
     enum caut_proto_tag prototype_tag;
     union caut_prototype prototype;
 };
 
 struct schema_descriptor {
-    char const * name;
-    uint8_t fingerprint[20];
     size_t type_count;
     struct type_descriptor const * types;
 };

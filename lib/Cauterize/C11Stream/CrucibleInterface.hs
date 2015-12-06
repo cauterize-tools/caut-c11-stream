@@ -13,6 +13,7 @@ import Data.Text (unpack)
 crucibleFromSpec :: S.Specification -> String
 crucibleFromSpec s = unindent [i|
   #include "#{ln}.h"
+  #include "#{ln}_info.h"
   #include "crucible_interface.h"
 
   size_t const schema_length_word_size = #{slws};
@@ -20,6 +21,7 @@ crucibleFromSpec s = unindent [i|
   size_t const schema_max_size = #{sms};
   size_t const schema_depth = #{sd};
   struct schema_descriptor const * const schema_schema_descriptor = &schema_descriptor_#{ln};
+  struct schema_info const * const schema_schema_info = &schema_info_#{ln};
 |]
     where
     slws = C.sizeMax . C.tagToSize . S.specLengthTag $ s

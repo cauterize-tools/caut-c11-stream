@@ -10,12 +10,10 @@ import Data.String.Interpolate.Util
 import Data.Text (unpack)
 import Data.List (intercalate)
 import Data.Maybe
-import Numeric (showHex)
 
 import qualified Data.Map as M
 import qualified Cauterize.Specification as S
 import qualified Cauterize.CommonTypes as C
-import qualified Cauterize.Hash as H
 
 cDescriptorsFromSpec :: S.Specification -> String
 cDescriptorsFromSpec s = unindent [i|
@@ -38,8 +36,6 @@ cDescriptorsFromSpec s = unindent [i|
   };
 
   struct schema_descriptor const schema_descriptor_#{ln} = {
-    .name = "#{ln}",
-    .fingerprint = {#{formatFp (S.specFingerprint s)}},
     .type_count = TYPE_COUNT_#{ln},
     .types = type_descriptors_#{ln},
   };
@@ -62,25 +58,14 @@ cDescriptorsFromSpec s = unindent [i|
           ident = S.typeName t
           tps = typeToPrimString t
       in chompNewline [i|
-    {
-      .name = "#{n}",
+    { /* #{n} */
       .type_id = type_id_#{ln}_#{n},
       .obj_size = sizeof(#{luDecl ident}),
-      .fingerprint = {#{formatFp (S.typeFingerprint t)}},
       .prototype_tag = caut_proto_#{tps},
       .prototype.c_#{tps} = {
 #{prototypeBody luDecl s t}
       },
     },|]
-
-formatFp :: H.Hash -> String
-formatFp f =
-  let bs = H.hashToBytes f
-      showByte n = case showHex n "" of
-                     [a] -> ['0', 'x', '0', a]
-                     [a,b] -> ['0', 'x', a, b]
-                     _ -> error "formatFp: should be impossible"
-  in intercalate "," (map showByte bs)
 
 fieldSets :: S.Specification -> [S.Type] -> String
 fieldSets s ts = intercalate "\n" $ mapMaybe (fieldSet s) ts
@@ -111,10 +96,10 @@ mkFieldSet name proto s fs = chompNewline [i|
 prototypeField :: S.Specification -> String -> S.Field -> String
 prototypeField _ _ S.EmptyField { S.fieldName = n, S.fieldIndex = ix }
   = chompNewline [i|
-    { .name = "#{ident2str n}", .field_index = #{ix}, .data = false, .ref_id = 0, .offset = 0 },|]
+    { .field_index = #{ix}, .data = false, .ref_id = 0, .offset = 0 }, /* #{ident2str n} */|]
 prototypeField s typeName S.DataField { S.fieldName = n, S.fieldIndex = ix, S.fieldRef = r }
   = chompNewline [i|
-    { .name = "#{n'}", .field_index = #{ix}, .data = true, .ref_id = type_id_#{ln}_#{r'}, .offset = offsetof(struct #{typeName}, #{n'}) },|]
+    { .field_index = #{ix}, .data = true, .ref_id = type_id_#{ln}_#{r'}, .offset = offsetof(struct #{typeName}, #{n'}) }, /* #{n'} */|]
   where
     ln = unpack (S.specName s)
     n' = ident2str n
