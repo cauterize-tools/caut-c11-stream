@@ -1,7 +1,7 @@
 #!/bin/sh
 
 OUT_BIN="caut_test"
-SANITIZE="-fsanitize=address -fsanitize=undefined"
+SANITIZE=""
 CFLAGS="-O3 -g3 -Wall -Wextra --std=c11 -pedantic ${SANITIZE}"
 INCLUDES="-Igenerated/"
 
