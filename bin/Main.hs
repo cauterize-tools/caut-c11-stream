@@ -64,6 +64,7 @@ generateDynamicFiles path baseName spec = do
   writeFile (path `combine` (baseName ++ "_types.h")) (hTypesFromSpec spec)
   writeFile (path `combine` (baseName ++ "_descriptors.h")) (hDescriptorsFromSpec spec)
   writeFile (path `combine` (baseName ++ "_descriptors.c")) (cDescriptorsFromSpec spec)
+  writeFile (path `combine` (baseName ++ "_infodefines.h")) (hInfoDefinesFromSpec spec)
   writeFile (path `combine` (baseName ++ "_info.h")) (hInfoFromSpec spec)
   writeFile (path `combine` (baseName ++ "_info.c")) (cInfoFromSpec spec)
   writeFile (path `combine` (baseName ++ "_crucible.c")) (crucibleFromSpec spec)

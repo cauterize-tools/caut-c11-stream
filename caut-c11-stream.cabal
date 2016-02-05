@@ -22,6 +22,7 @@ library
                      , Cauterize.C11Stream.HDescriptors
                      , Cauterize.C11Stream.CDescriptors
                      , Cauterize.C11Stream.HInfo
+                     , Cauterize.C11Stream.HInfoDefines
                      , Cauterize.C11Stream.CInfo
                      , Cauterize.C11Stream.Util
                      , Cauterize.C11Stream.StaticFiles

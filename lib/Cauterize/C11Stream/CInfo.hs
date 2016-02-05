@@ -10,11 +10,9 @@ import Data.String.Interpolate.Util
 import Data.Text (unpack)
 import Data.List (intercalate)
 import Data.Maybe
-import Numeric (showHex)
 
 import qualified Cauterize.Specification as S
 import qualified Cauterize.CommonTypes as C
-import qualified Cauterize.Hash as H
 
 cInfoFromSpec :: S.Specification -> String
 cInfoFromSpec s = unindent [i|
@@ -38,7 +36,7 @@ cInfoFromSpec s = unindent [i|
 
   struct schema_info const schema_info_#{ln} = {
     .name = "#{ln}",
-    .fingerprint = {#{formatFp (S.specFingerprint s)}},
+    .fingerprint = SCHEMA_FP_#{ln},
     .min_size = #{min_size},
     .max_size = #{max_size},
     .depth = #{depth},
@@ -75,19 +73,10 @@ cInfoFromSpec s = unindent [i|
       .min_size = #{smin},
       .max_size = #{smax},
       .depth = #{tdepth},
-      .fingerprint = {#{formatFp (S.typeFingerprint t)}},
+      .fingerprint = TYPE_FP_#{ln}_#{n},
       .prototype_tag = caut_proto_#{tps},
 #{proto}
     },|]
-
-formatFp :: H.Hash -> String
-formatFp f =
-  let bs = H.hashToBytes f
-      showByte n = case showHex n "" of
-                     [a] -> ['0', 'x', '0', a]
-                     [a,b] -> ['0', 'x', a, b]
-                     _ -> error "formatFp: should be impossible"
-  in intercalate "," (map showByte bs)
 
 fieldSets :: S.Specification -> [S.Type] -> String
 fieldSets s ts = intercalate "\n" $ mapMaybe (fieldSet s) ts

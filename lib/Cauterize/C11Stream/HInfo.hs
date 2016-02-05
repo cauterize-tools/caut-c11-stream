@@ -18,11 +18,12 @@ hInfoFromSpec s = unindent [i|
 
   #include "cauterize_info.h"
   #include "#{ln}_descriptors.h"
+  #include "#{ln}_info_defines.h"
 
   /* number of types */
   #define INFO_COUNT_#{ln} (#{typeCount})
 
-/* a descriptor for the entire schema */
+  /* a descriptor for the entire schema */
   extern struct schema_info const schema_info_#{ln};
 
   #endif /* #{guardSym} */
