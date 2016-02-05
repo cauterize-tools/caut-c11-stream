@@ -22,9 +22,9 @@ struct caut_synonym {
 };
 
 struct caut_range {
-    enum caut_tag tag;
     int64_t offset;
     uint64_t length;
+    enum caut_tag tag;
     size_t word_size;
 };
 
