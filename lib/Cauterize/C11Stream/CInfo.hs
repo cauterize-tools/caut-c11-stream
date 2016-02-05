@@ -39,6 +39,9 @@ cInfoFromSpec s = unindent [i|
   struct schema_info const schema_info_#{ln} = {
     .name = "#{ln}",
     .fingerprint = {#{formatFp (S.specFingerprint s)}},
+    .min_size = #{min_size},
+    .max_size = #{max_size},
+    .depth = #{depth},
     .type_count = TYPE_COUNT_#{ln},
     .types = type_info_#{ln},
   };
@@ -49,11 +52,15 @@ cInfoFromSpec s = unindent [i|
     infoList = intercalate "\n" $ map info types
     min_size = C.sizeMin (S.specSize s)
     max_size = C.sizeMax (S.specSize s)
+    depth = S.specDepth s
 
     -- Names to how you delcare that name
     info t =
       let n = ident2str ident
           ident = S.typeName t
+          smin = C.sizeMin (S.typeSize t)
+          smax = C.sizeMax (S.typeSize t)
+          tdepth = S.typeDepth t
           tps = typeToPrimString t
           proto =
             case prototypeBody s t of
@@ -65,8 +72,9 @@ cInfoFromSpec s = unindent [i|
       in chompNewline [i|
     {
       .name = "#{n}",
-      .min_size = #{min_size},
-      .max_size = #{max_size},
+      .min_size = #{smin},
+      .max_size = #{smax},
+      .depth = #{tdepth},
       .fingerprint = {#{formatFp (S.typeFingerprint t)}},
       .prototype_tag = caut_proto_#{tps},
 #{proto}

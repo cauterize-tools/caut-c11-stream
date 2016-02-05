@@ -43,6 +43,7 @@ struct type_info {
     uint8_t fingerprint[20];
     size_t min_size;
     size_t max_size;
+    size_t depth;
     enum caut_proto_tag prototype_tag;
     union info_prototype prototype;
 };
@@ -50,6 +51,9 @@ struct type_info {
 struct schema_info {
     char const * name;
     uint8_t fingerprint[20];
+    size_t min_size;
+    size_t max_size;
+    size_t depth;
     size_t type_count;
     struct type_info const * types;
 };
