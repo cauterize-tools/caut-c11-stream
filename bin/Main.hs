@@ -6,12 +6,16 @@ import Cauterize.C11Stream.HTypes
 import Cauterize.C11Stream.HDescriptors
 import Cauterize.C11Stream.CDescriptors
 import Cauterize.C11Stream.HInfo
+import Cauterize.C11Stream.HInfoDefines
 import Cauterize.C11Stream.CInfo
 import Cauterize.C11Stream.StaticFiles
 import Cauterize.C11Stream.CrucibleInterface
+import Control.Monad
 import Data.Text (unpack)
+import Data.Maybe (isNothing, fromJust)
 import System.Directory
 import System.FilePath.Posix
+import System.Exit
 import qualified Cauterize.Specification as S
 import qualified Data.ByteString as B
 
@@ -19,15 +23,21 @@ main :: IO ()
 main = runWithOptions caut2c11
 
 caut2c11 :: Caut2C11Opts -> IO ()
-caut2c11 (Caut2C11Opts { specFile = sf, outputDirectory = od }) = createGuard od $ do
-  spec <- loadSpec
-  let baseName = unpack $ S.specName spec
+caut2c11 (Caut2C11Opts { specFile = sf, outputDirectory = od, noLib = l, noGen = g }) = createGuard od $ do
+  when (not g && isNothing sf) $ do
+    putStrLn "Unless (--nogen|-G) is specified, a specification file must be provided (--spec|-s)."
+    exitFailure
 
-  generateDynamicFiles od baseName spec
+  when (not g) $ do
+    spec <- loadSpec (fromJust sf)
+    let baseName = unpack $ S.specName spec
+    generateDynamicFiles od baseName spec
+  when (not l) $ generateStaticFiles od
+
   where
-    loadSpec :: IO S.Specification
-    loadSpec = do
-      s <- S.parseSpecificationFromFile sf
+    loadSpec :: FilePath -> IO S.Specification
+    loadSpec p = do
+      s <- S.parseSpecificationFromFile p
       case s of
         Left e -> error $ show e
         Right s' -> return s'
@@ -43,6 +53,11 @@ createGuard out go = do
           then go
           else createDirectory out >> go
 
+generateStaticFiles :: FilePath -> IO ()
+generateStaticFiles path = mapM_ staticWrite allFiles
+  where
+    staticWrite (p,c) = B.writeFile (path `combine` p) c
+
 generateDynamicFiles :: FilePath -> String -> S.Specification -> IO ()
 generateDynamicFiles path baseName spec = do
   writeFile (path `combine` (baseName ++ ".h")) (hFileFromSpec spec)
@@ -52,14 +67,3 @@ generateDynamicFiles path baseName spec = do
   writeFile (path `combine` (baseName ++ "_info.h")) (hInfoFromSpec spec)
   writeFile (path `combine` (baseName ++ "_info.c")) (cInfoFromSpec spec)
   writeFile (path `combine` (baseName ++ "_crucible.c")) (crucibleFromSpec spec)
-
-  mapM_ staticWrite allFiles
-
-  where
-    staticWrite (p,c) = B.writeFile (path `combine` p) c
-
---  writeFile (path `combine` (baseName ++ ".c")) (cFileFromSpec spec)
---  writeFile (path `combine` (baseName ++ "_message.h")) (hMessageFileFromSpec spec)
---  writeFile (path `combine` (baseName ++ "_message.c")) (cMessageFileFromSpec spec)
---  writeFile (path `combine` "test_client.h")  (testClientFromSpec spec)
---  writeFile (path `combine` "Makefile")  (makefileFromSpec spec)
