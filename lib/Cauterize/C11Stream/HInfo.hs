@@ -18,7 +18,7 @@ hInfoFromSpec s = unindent [i|
 
   #include "cauterize_info.h"
   #include "#{ln}_descriptors.h"
-  #include "#{ln}_info_defines.h"
+  #include "#{ln}_infodefines.h"
 
   /* number of types */
   #define INFO_COUNT_#{ln} (#{typeCount})
