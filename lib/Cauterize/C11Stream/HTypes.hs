@@ -24,11 +24,14 @@ hTypesFromSpec s = unindent [i|
   #include "cauterize.h"
   #include <stdint.h>
 
+  #include "#{ln}_infodefines.h"
+
   #define NAME_#{ln} "#{ln}"
   #define VERSION_#{ln} "#{unpack $ S.specVersion s}"
-  #define MIN_SIZE_#{ln} (#{C.sizeMin libsize})
-  #define MAX_SIZE_#{ln} (#{C.sizeMax libsize})
   #define NUM_TYPES_#{ln} (#{length types})
+  #define MIN_SIZE_#{ln} SCHEMA_SIZE_MIN_#{ln}
+  #define MAX_SIZE_#{ln} SCHEMA_SIZE_MAX_#{ln}
+
 
   /* type definitions */
 #{typeDefinitions}
@@ -38,7 +41,6 @@ hTypesFromSpec s = unindent [i|
   where
     guardSym = [i|_CAUTERIZE_C11STREAM_#{ln}_TYPES_|]
     ln = unpack (S.specName s)
-    libsize = S.specSize s
     types = S.specTypes s
     typeDefinitions = unlines (mapMaybe (typeDefinition luDecl) types)
     luDecl n = fromMaybe (error $ "Invalid name: " ++ unpack (C.unIdentifier n) ++ ".")

@@ -12,7 +12,6 @@ import Data.List (intercalate)
 import Data.Maybe
 
 import qualified Cauterize.Specification as S
-import qualified Cauterize.CommonTypes as C
 
 cInfoFromSpec :: S.Specification -> String
 cInfoFromSpec s = unindent [i|
@@ -37,8 +36,8 @@ cInfoFromSpec s = unindent [i|
   struct schema_info const schema_info_#{ln} = {
     .name = "#{ln}",
     .fingerprint = SCHEMA_FP_#{ln},
-    .min_size = #{min_size},
-    .max_size = #{max_size},
+    .min_size = SCHEMA_SIZE_MIN_#{ln},
+    .max_size = SCHEMA_SIZE_MAX_#{ln},
     .depth = #{depth},
     .type_count = TYPE_COUNT_#{ln},
     .types = type_info_#{ln},
@@ -48,16 +47,12 @@ cInfoFromSpec s = unindent [i|
     ln = unpack (S.specName s)
     types = S.specTypes s
     infoList = intercalate "\n" $ map info types
-    min_size = C.sizeMin (S.specSize s)
-    max_size = C.sizeMax (S.specSize s)
     depth = S.specDepth s
 
     -- Names to how you delcare that name
     info t =
       let n = ident2str ident
           ident = S.typeName t
-          smin = C.sizeMin (S.typeSize t)
-          smax = C.sizeMax (S.typeSize t)
           tdepth = S.typeDepth t
           tps = typeToPrimString t
           proto =
@@ -70,8 +65,8 @@ cInfoFromSpec s = unindent [i|
       in chompNewline [i|
     {
       .name = "#{n}",
-      .min_size = #{smin},
-      .max_size = #{smax},
+      .min_size = TYPE_SIZE_MIN_#{ln}_#{n},
+      .max_size = TYPE_SIZE_MAX_#{ln}_#{n},
       .depth = #{tdepth},
       .fingerprint = TYPE_FP_#{ln}_#{n},
       .prototype_tag = caut_proto_#{tps},
