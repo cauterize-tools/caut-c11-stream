@@ -5,7 +5,7 @@ module Cauterize.C11Stream.HInfo
 
 import Data.String.Interpolate
 import Data.String.Interpolate.Util
-import Data.Text (unpack)
+import Cauterize.C11Stream.Util
 
 import qualified Cauterize.Specification as S
 
@@ -30,6 +30,6 @@ hInfoFromSpec s = unindent [i|
 |]
   where
     guardSym = [i|_CAUTERIZE_C11STREAM_#{ln}_INFOS_|]
-    ln = unpack (S.specName s)
+    ln = specCName s
     types = S.specTypes s
     typeCount = length types

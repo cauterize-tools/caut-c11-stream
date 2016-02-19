@@ -8,7 +8,6 @@ import Cauterize.C11Stream.Util
 import Data.String.Interpolate
 import Data.String.Interpolate.Util
 import Data.List (intercalate)
-import Data.Text (unpack)
 import Numeric (showHex)
 
 import qualified Cauterize.Specification as S
@@ -37,7 +36,7 @@ hInfoDefinesFromSpec s = unindent [i|
   where
     guardSym = [i|_CAUTERIZE_C11STREAM_#{ln}_INFO_DEFINES_|]
     libsize = S.specSize s
-    ln = unpack (S.specName s)
+    ln = specCName s
     types = S.specTypes s
     typeFps = intercalate "\n" $ map fingerprint types
     fingerprint t =

@@ -7,6 +7,8 @@ module Cauterize.C11Stream.Util
   , chompNewline
   , tag2c
   , typeToPrimString
+  , validCTok
+  , specCName
   ) where
 
 import Data.Text (unpack)
@@ -74,3 +76,12 @@ typeToPrimString S.Type { S.typeDesc = d } = n
       S.Record {}      -> "record"
       S.Combination {} -> "combination"
       S.Union {}       -> "union"
+
+validCTok :: String -> String
+validCTok = map dash_to_underscore
+  where
+  dash_to_underscore '-' = '_'
+  dash_to_underscore a = a
+
+specCName :: S.Specification -> String
+specCName = validCTok . unpack . S.specName

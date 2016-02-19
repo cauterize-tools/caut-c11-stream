@@ -7,7 +7,6 @@ import Cauterize.C11Stream.Util
 
 import Data.String.Interpolate
 import Data.String.Interpolate.Util
-import Data.Text (unpack)
 import Data.List (intercalate)
 import Data.Maybe
 
@@ -44,7 +43,7 @@ cInfoFromSpec s = unindent [i|
   };
 |]
   where
-    ln = unpack (S.specName s)
+    ln = specCName s
     types = S.specTypes s
     infoList = intercalate "\n" $ map info types
     depth = S.specDepth s
@@ -97,7 +96,7 @@ mkFieldSet name proto s fs = chompNewline [i|
   };
 |]
   where
-    ln = unpack (S.specName s)
+    ln = specCName s
 
 mkValueSet :: String -> String -> S.Specification -> [S.EnumVal] -> String
 mkValueSet name proto s fs = chompNewline [i|
@@ -106,7 +105,7 @@ mkValueSet name proto s fs = chompNewline [i|
   };
 |]
   where
-    ln = unpack (S.specName s)
+    ln = specCName s
     ev (S.EnumVal v ix) = [i|    { .name = "#{ident2str v}", .field_index = #{ix} },|]
 
 prototypeFieldInfo :: S.Field -> String
@@ -140,4 +139,4 @@ prototypeBody s (S.Type { S.typeName = n, S.typeDesc = d }) =
         .fields = union_field_infos_#{ln}_#{ident2str n},|]
     _ -> Nothing
   where
-    ln = unpack (S.specName s)
+    ln = specCName s

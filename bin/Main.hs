@@ -10,8 +10,8 @@ import Cauterize.C11Stream.HInfoDefines
 import Cauterize.C11Stream.CInfo
 import Cauterize.C11Stream.StaticFiles
 import Cauterize.C11Stream.CrucibleInterface
+import Cauterize.C11Stream.Util
 import Control.Monad
-import Data.Text (unpack)
 import Data.Maybe (isNothing, fromJust)
 import System.Directory
 import System.FilePath.Posix
@@ -30,7 +30,7 @@ caut2c11 (Caut2C11Opts { specFile = sf, outputDirectory = od, noLib = l, noGen =
 
   when (not g) $ do
     spec <- loadSpec (fromJust sf)
-    let baseName = unpack $ S.specName spec
+    let baseName = specCName spec
     generateDynamicFiles od baseName spec
   when (not l) $ generateStaticFiles od
 
