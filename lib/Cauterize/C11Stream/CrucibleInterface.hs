@@ -5,10 +5,10 @@ module Cauterize.C11Stream.CrucibleInterface
 
 import qualified Cauterize.Specification as S
 import qualified Cauterize.CommonTypes as C
+import Cauterize.C11Stream.Util (specCName)
 
 import Data.String.Interpolate
 import Data.String.Interpolate.Util
-import Data.Text (unpack)
 
 crucibleFromSpec :: S.Specification -> String
 crucibleFromSpec s = unindent [i|
@@ -28,4 +28,4 @@ crucibleFromSpec s = unindent [i|
     sts = S.specTypeLength s
     sms = C.sizeMax . S.specSize $ s
     sd = S.specDepth s
-    ln = unpack (S.specName s)
+    ln = specCName s

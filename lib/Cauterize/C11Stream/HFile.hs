@@ -4,8 +4,8 @@ module Cauterize.C11Stream.HFile
        ) where
 
 import qualified Cauterize.Specification as S
+import Cauterize.C11Stream.Util
 
-import Data.Text (unpack)
 import Data.String.Interpolate
 import Data.String.Interpolate.Util
 
@@ -21,4 +21,4 @@ hFileFromSpec s = unindent [i|
 |]
   where
     guardSym = [i|_CAUTERIZE_C11STREAM_#{ln}_|]
-    ln = unpack (S.specName s)
+    ln = specCName s
