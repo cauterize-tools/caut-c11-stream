@@ -11,29 +11,23 @@ import Cauterize.C11Stream.CInfo
 import Cauterize.C11Stream.StaticFiles
 import Cauterize.C11Stream.CrucibleInterface
 import Cauterize.C11Stream.Util
-import Control.Monad
-import Data.Maybe (isNothing, fromJust)
 import System.Directory
 import System.FilePath.Posix
-import System.Exit
 import qualified Cauterize.Specification as S
 import qualified Data.ByteString as B
 
 main :: IO ()
-main = runWithOptions caut2c11
+main = runWithOptions aux
+  where aux (CautC11CommandGen opts) = genC11 opts
+        aux (CautC11CommandLib opts) = genLib opts
+        aux (CautC11CommandAll g l) = genC11 g >> genLib l
 
-caut2c11 :: Caut2C11Opts -> IO ()
-caut2c11 (Caut2C11Opts { specFile = sf, outputDirectory = od, noLib = l, noGen = g }) = createGuard od $ do
-  when (not g && isNothing sf) $ do
-    putStrLn "Unless (--nogen|-G) is specified, a specification file must be provided (--spec|-s)."
-    exitFailure
-
-  when (not g) $ do
-    spec <- loadSpec (fromJust sf)
+genC11 :: CautC11GenOpts -> IO ()
+genC11 CautC11GenOpts { specFile = sf, genOutputDirectory = od} =
+  createGuard od $ do
+    spec <- loadSpec sf
     let baseName = specCName spec
     generateDynamicFiles od baseName spec
-  when (not l) $ generateStaticFiles od
-
   where
     loadSpec :: FilePath -> IO S.Specification
     loadSpec p = do
@@ -41,6 +35,10 @@ caut2c11 (Caut2C11Opts { specFile = sf, outputDirectory = od, noLib = l, noGen =
       case s of
         Left e -> error $ show e
         Right s' -> return s'
+
+genLib :: CautC11LibOpts -> IO ()
+genLib CautC11LibOpts { libOutputDirectory = od} =
+  createGuard od $ generateStaticFiles od
 
 createGuard :: FilePath -> IO a -> IO a
 createGuard out go = do
