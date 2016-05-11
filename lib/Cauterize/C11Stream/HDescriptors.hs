@@ -7,7 +7,6 @@ import Cauterize.C11Stream.Util
 
 import Data.String.Interpolate
 import Data.String.Interpolate.Util
-import Data.Text (unpack)
 import Data.List (intercalate)
 
 import qualified Cauterize.Specification as S
@@ -38,7 +37,7 @@ hDescriptorsFromSpec s = unindent [i|
 |]
   where
     guardSym = [i|_CAUTERIZE_C11STREAM_#{ln}_DESCRIPTORS_|]
-    ln = unpack (S.specName s)
+    ln = specCName s
     depth = S.specDepth s
     types = S.specTypes s
     typeCount = length types

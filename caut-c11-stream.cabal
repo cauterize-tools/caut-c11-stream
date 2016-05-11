@@ -17,15 +17,19 @@ library
                      , text
                      , file-embed
                      , bytestring
+                     , gitrev
   exposed-modules:     Cauterize.C11Stream.HFile
                      , Cauterize.C11Stream.HTypes
                      , Cauterize.C11Stream.HDescriptors
                      , Cauterize.C11Stream.CDescriptors
                      , Cauterize.C11Stream.HInfo
+                     , Cauterize.C11Stream.HInfoDefines
                      , Cauterize.C11Stream.CInfo
                      , Cauterize.C11Stream.Util
                      , Cauterize.C11Stream.StaticFiles
                      , Cauterize.C11Stream.CrucibleInterface
+                     , Cauterize.C11Stream.Version
+  other-modules:       Paths_caut_c11_stream
 
 
 executable caut-c11-stream

@@ -41,7 +41,7 @@ cDescriptorsFromSpec s = unindent [i|
   };
 |]
   where
-    ln = unpack (S.specName s)
+    ln = specCName s
     types = S.specTypes s
     descriptorList = intercalate "\n" $ map descriptor types
 
@@ -91,7 +91,7 @@ mkFieldSet name proto s fs = chompNewline [i|
   };
 |]
   where
-    ln = unpack (S.specName s)
+    ln = specCName s
 
 prototypeField :: S.Specification -> String -> S.Field -> String
 prototypeField _ _ S.EmptyField { S.fieldName = n, S.fieldIndex = ix }
@@ -101,7 +101,7 @@ prototypeField s typeName S.DataField { S.fieldName = n, S.fieldIndex = ix, S.fi
   = chompNewline [i|
     { .field_index = #{ix}, .data = true, .ref_id = type_id_#{ln}_#{r'}, .offset = offsetof(struct #{typeName}, #{n'}) }, /* #{n'} */|]
   where
-    ln = unpack (S.specName s)
+    ln = specCName s
     n' = ident2str n
     r' = ident2str r
 
@@ -149,7 +149,7 @@ prototypeBody luDecl s (S.Type { S.typeName = n, S.typeDesc = d }) =
         .field_count = #{length uf}u,
         .fields = union_fields_#{ln}_#{ident2str n},|]
   where
-    ln = unpack (S.specName s)
+    ln = specCName s
 
 tagToTagEnumStr :: C.Tag -> String
 tagToTagEnumStr C.T1 = "caut_tag_8"

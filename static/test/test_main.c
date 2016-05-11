@@ -6,6 +6,7 @@
 
 #include "cauterize.h"
 #include "cauterize_iterators.h"
+#include "cauterize_info.h"
 
 #include "caut_test_types.h"
 #include "caut_test_descriptors.h"
@@ -650,6 +651,25 @@ SUITE(corner) {
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char * argv[]) {
+    printf("INFO: sizeof(struct schema_encode_iterator) = %zu\n",
+           sizeof(struct schema_encode_iterator));
+    printf("INFO: sizeof(struct schema_decode_iterator) = %zu\n",
+           sizeof(struct schema_decode_iterator));
+    printf("INFO: sizeof(struct type_decode_iterator) = %zu\n",
+           sizeof(struct type_decode_iterator));
+    printf("INFO: sizeof(struct type_encode_iterator) = %zu\n",
+           sizeof(struct type_encode_iterator));
+    printf("INFO: sizeof(struct type_descriptor) = %zu\n",
+           sizeof(struct type_descriptor));
+    printf("INFO: sizeof(struct caut_field) = %zu\n",
+           sizeof(struct caut_field));
+    printf("INFO: sizeof(struct type_info) = %zu\n",
+           sizeof(struct type_info));
+    printf("INFO: sizeof(struct caut_field_info) = %zu\n",
+           sizeof(struct caut_field_info));
+
+    printf("\n");
+
     sei = calloc(sizeof(*sei), 1);
     tei = calloc(sizeof(*tei), SCHEMA_DEPTH_caut_test);
 
@@ -659,7 +679,6 @@ int main(int argc, char * argv[]) {
     buf_size = MAX_SIZE_caut_test;
 
     GREATEST_MAIN_BEGIN();
-
 
     printf("Schema Encoding Iterators are %lu bytes in size.\n", sizeof(*sei));
     printf("Type Encoding Iterators are %lu bytes in size.\n", sizeof(*tei));
