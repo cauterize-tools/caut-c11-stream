@@ -164,6 +164,15 @@ S schema_decode_iterator_init(SDI * si, SD const * sd, TDI * ti, size_t ti_count
         .dst_type = dst_type,
     };
 
+    // Initialize the object memory to 0. The decoder assumes that it
+    // only has to overlay bytes on top of a 0'ed out object. If this
+    // is not here, then situations where tags on the host are wider
+    // than the encoded tags may result in garbage values stored in
+    // the host tag.
+    TD const * td = NULL;
+    RE(get_type_desc(sd, type_id, &td));
+    memset(dst_type, 0, td->obj_size);
+
     RE(type_decode_iterator_init(sd, ti, type_id, dst_type));
 
     return caut_status_ok;
