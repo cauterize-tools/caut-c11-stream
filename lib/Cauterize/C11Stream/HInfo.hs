@@ -5,7 +5,7 @@ module Cauterize.C11Stream.HInfo
 
 import Data.String.Interpolate
 import Data.String.Interpolate.Util
-import Data.Text (unpack)
+import Cauterize.C11Stream.Util
 
 import qualified Cauterize.Specification as S
 
@@ -18,17 +18,18 @@ hInfoFromSpec s = unindent [i|
 
   #include "cauterize_info.h"
   #include "#{ln}_descriptors.h"
+  #include "#{ln}_infodefines.h"
 
   /* number of types */
   #define INFO_COUNT_#{ln} (#{typeCount})
 
-/* a descriptor for the entire schema */
+  /* a descriptor for the entire schema */
   extern struct schema_info const schema_info_#{ln};
 
   #endif /* #{guardSym} */
 |]
   where
     guardSym = [i|_CAUTERIZE_C11STREAM_#{ln}_INFOS_|]
-    ln = unpack (S.specName s)
+    ln = specCName s
     types = S.specTypes s
     typeCount = length types

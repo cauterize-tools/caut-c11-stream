@@ -7,14 +7,10 @@ import Cauterize.C11Stream.Util
 
 import Data.String.Interpolate
 import Data.String.Interpolate.Util
-import Data.Text (unpack)
 import Data.List (intercalate)
 import Data.Maybe
-import Numeric (showHex)
 
 import qualified Cauterize.Specification as S
-import qualified Cauterize.CommonTypes as C
-import qualified Cauterize.Hash as H
 
 cInfoFromSpec :: S.Specification -> String
 cInfoFromSpec s = unindent [i|
@@ -38,22 +34,25 @@ cInfoFromSpec s = unindent [i|
 
   struct schema_info const schema_info_#{ln} = {
     .name = "#{ln}",
-    .fingerprint = {#{formatFp (S.specFingerprint s)}},
+    .fingerprint = SCHEMA_FP_#{ln},
+    .min_size = SCHEMA_SIZE_MIN_#{ln},
+    .max_size = SCHEMA_SIZE_MAX_#{ln},
+    .depth = #{depth},
     .type_count = TYPE_COUNT_#{ln},
     .types = type_info_#{ln},
   };
 |]
   where
-    ln = unpack (S.specName s)
+    ln = specCName s
     types = S.specTypes s
     infoList = intercalate "\n" $ map info types
-    min_size = C.sizeMin (S.specSize s)
-    max_size = C.sizeMax (S.specSize s)
+    depth = S.specDepth s
 
     -- Names to how you delcare that name
     info t =
       let n = ident2str ident
           ident = S.typeName t
+          tdepth = S.typeDepth t
           tps = typeToPrimString t
           proto =
             case prototypeBody s t of
@@ -65,21 +64,13 @@ cInfoFromSpec s = unindent [i|
       in chompNewline [i|
     {
       .name = "#{n}",
-      .min_size = #{min_size},
-      .max_size = #{max_size},
-      .fingerprint = {#{formatFp (S.typeFingerprint t)}},
+      .min_size = TYPE_SIZE_MIN_#{ln}_#{n},
+      .max_size = TYPE_SIZE_MAX_#{ln}_#{n},
+      .depth = #{tdepth},
+      .fingerprint = TYPE_FP_#{ln}_#{n},
       .prototype_tag = caut_proto_#{tps},
 #{proto}
     },|]
-
-formatFp :: H.Hash -> String
-formatFp f =
-  let bs = H.hashToBytes f
-      showByte n = case showHex n "" of
-                     [a] -> ['0', 'x', '0', a]
-                     [a,b] -> ['0', 'x', a, b]
-                     _ -> error "formatFp: should be impossible"
-  in intercalate "," (map showByte bs)
 
 fieldSets :: S.Specification -> [S.Type] -> String
 fieldSets s ts = intercalate "\n" $ mapMaybe (fieldSet s) ts
@@ -105,7 +96,7 @@ mkFieldSet name proto s fs = chompNewline [i|
   };
 |]
   where
-    ln = unpack (S.specName s)
+    ln = specCName s
 
 mkValueSet :: String -> String -> S.Specification -> [S.EnumVal] -> String
 mkValueSet name proto s fs = chompNewline [i|
@@ -114,7 +105,7 @@ mkValueSet name proto s fs = chompNewline [i|
   };
 |]
   where
-    ln = unpack (S.specName s)
+    ln = specCName s
     ev (S.EnumVal v ix) = [i|    { .name = "#{ident2str v}", .field_index = #{ix} },|]
 
 prototypeFieldInfo :: S.Field -> String
@@ -148,4 +139,4 @@ prototypeBody s (S.Type { S.typeName = n, S.typeDesc = d }) =
         .fields = union_field_infos_#{ln}_#{ident2str n},|]
     _ -> Nothing
   where
-    ln = unpack (S.specName s)
+    ln = specCName s
