@@ -3,6 +3,7 @@ module Cauterize.C11Stream.Util
   ( t2decl
   , primDeclMap
   , ident2str
+  , ident2decl
   , prim2c
   , chompNewline
   , tag2c
@@ -13,11 +14,19 @@ module Cauterize.C11Stream.Util
 
 import Data.Text (unpack)
 import Data.String.Interpolate
---import Data.String.Interpolate.Util
+import Data.Maybe
 import qualified Data.Map as M
 
 import qualified Cauterize.CommonTypes as C
 import qualified Cauterize.Specification as S
+import qualified Cauterize.Specification.Types as T
+
+ident2decl :: S.Specification -> C.Identifier -> String
+ident2decl spec ident = getIdent
+  where
+    getIdent = fromMaybe getUsrTypeIdent (ident `M.lookup` primDeclMap)
+    getUsrTypeIdent = t2decl $ fromMaybe err (ident `M.lookup` (T.specTypeMap spec))
+    err = error (ident2str ident ++ " is not a type in the specification.")
 
 t2decl :: S.Type -> String
 t2decl (S.Type { S.typeName = tname, S.typeDesc = t}) =
