@@ -3,11 +3,11 @@ packages:
 - '.'
 - location:
     git: https://github.com/cauterize-tools/cauterize.git
-    commit: 110e4269f2ce9f850c98ae5e5b75dc822f68c2c2
+    commit: 86d553b2a03b3d6bafa958e36a2f7d8ff3e803d4
 - location:
     git: https://github.com/cauterize-tools/crucible.git
     commit: b2125cf19e64411c08b10a26bd8dffa17e11ec0e
 extra-deps:
   - gitrev-1.2.0
   - s-cargot-0.1.0.0
-resolver: lts-3.16
+resolver: nightly-2016-04-16
