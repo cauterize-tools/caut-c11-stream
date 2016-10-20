@@ -3,7 +3,7 @@ packages:
 - '.'
 - location:
     git: https://github.com/cauterize-tools/cauterize.git
-    commit: 51ca971d20c99320312b9246dc181e2ece1debab
+    commit: 86d553b2a03b3d6bafa958e36a2f7d8ff3e803d4
 - location:
     git: https://github.com/cauterize-tools/crucible.git
     commit: b2125cf19e64411c08b10a26bd8dffa17e11ec0e
