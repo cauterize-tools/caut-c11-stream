@@ -174,6 +174,10 @@ static S caut_dec_put_byte_enumeration(SDI * di, TD const * td, TDI * ti, bool *
 
     assert(iter->tag_iter.tag_position < caut_tag_size(desc->tag));
 
+    if (NULL == byte) {
+        return caut_status_err_need_byte;
+    }
+
     *progress = true;
     b[iter->tag_iter.tag_position] = *byte;
     iter->tag_iter.tag_position += 1;
