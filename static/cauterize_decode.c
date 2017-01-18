@@ -291,6 +291,10 @@ static S caut_dec_put_byte_combination(SDI * di, TD const * td, TDI * ti, bool *
     uint8_t * const t = (uint8_t *)ti->type;
 
     if (iter->tag_iter.tag_position < caut_tag_size(desc->tag)) {
+        if (NULL == byte) {
+            return caut_status_err_need_byte;
+        }
+
         *progress = true;
 
         // still accumulating tag
@@ -337,6 +341,10 @@ static S caut_dec_put_byte_union(SDI * di, TD const * td, TDI * ti, bool * progr
     uint8_t * const t = (uint8_t *)ti->type;
 
     if (iter->tag_iter.tag_position < caut_tag_size(desc->tag)) {
+        if (NULL == byte) {
+            return caut_status_err_need_byte;
+        }
+
         *progress = true;
 
         // still accumulating tag
