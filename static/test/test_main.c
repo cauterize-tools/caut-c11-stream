@@ -21,6 +21,9 @@ struct type_encode_iterator * tei = NULL;
 struct schema_decode_iterator * sdi = NULL;
 struct type_decode_iterator * tdi = NULL;
 
+struct schema_size_iterator * ssi = NULL;
+struct type_size_iterator * tsi = NULL;
+
 static uint8_t * enc_buffer = NULL;
 static size_t buf_size = 0;
 
@@ -457,6 +460,204 @@ TEST test_decode_union(void) {
     PASS();
 }
 
+TEST test_size_primitive(void) {
+    uint16_t enc = 0xAABB;
+
+    enum caut_status const init_stat =
+        schema_size_iterator_init(
+            ssi, sd, tsi,
+            SCHEMA_DEPTH_caut_test,
+            type_id_caut_test_u16,
+            &enc);
+
+    ASSERT_EQ(caut_status_ok, init_stat);
+
+    size_t size = 0;
+    enum caut_status const enc_status =
+        caut_size_get(ssi, &size);
+
+    ASSERT_EQ(caut_status_ok, enc_status);
+    ASSERT_EQ(sizeof(enc), size);
+
+    PASS();
+}
+
+TEST test_size_synonym(void) {
+    syn enc = 0xAABBCCDD;
+
+    enum caut_status const init_stat =
+        schema_size_iterator_init(
+            ssi, sd, tsi,
+            SCHEMA_DEPTH_caut_test,
+            type_id_caut_test_syn,
+            &enc);
+
+    ASSERT_EQ(caut_status_ok, init_stat);
+
+    size_t size = 0;
+    enum caut_status const enc_status =
+        caut_size_get(ssi, &size);
+
+    ASSERT_EQ_FMT(caut_status_ok, enc_status, "%d");
+    ASSERT_EQ(sizeof(enc), size);
+
+    PASS();
+}
+
+TEST test_size_range(void) {
+    rng1 enc = 1050;
+
+    enum caut_status const init_stat =
+        schema_size_iterator_init(
+            ssi, sd, tsi,
+            SCHEMA_DEPTH_caut_test,
+            type_id_caut_test_rng1,
+            &enc);
+
+    ASSERT_EQ(caut_status_ok, init_stat);
+
+    size_t size = 0;
+    enum caut_status const enc_status =
+        caut_size_get(ssi, &size);
+
+    ASSERT_EQ(caut_status_ok, enc_status);
+    ASSERT_EQ(1, size);
+
+    PASS();
+}
+
+TEST test_size_enumeration(void) {
+    enum en0 enc = en0_en_c;
+
+    enum caut_status const init_stat =
+        schema_size_iterator_init(
+            ssi, sd, tsi,
+            SCHEMA_DEPTH_caut_test,
+            type_id_caut_test_en0,
+            &enc);
+
+    ASSERT_EQ(caut_status_ok, init_stat);
+
+    size_t size = 0;
+    enum caut_status const enc_status =
+        caut_size_get(ssi, &size);
+
+    ASSERT_EQ(caut_status_ok, enc_status);
+    ASSERT_EQ(1, size);
+
+    PASS();
+}
+
+TEST test_size_array(void) {
+    struct arr enc = { { 1, 2 } };
+
+    enum caut_status const init_stat =
+        schema_size_iterator_init(
+            ssi, sd, tsi,
+            SCHEMA_DEPTH_caut_test,
+            type_id_caut_test_arr,
+            &enc);
+
+    ASSERT_EQ(caut_status_ok, init_stat);
+
+    size_t size = 0;
+    enum caut_status const enc_status =
+        caut_size_get(ssi, &size);
+
+    ASSERT_EQ(caut_status_ok, enc_status);
+    ASSERT_EQ(8, size);
+
+    PASS();
+}
+
+TEST test_size_vector(void) {
+    struct vec enc = { ._length = 1, .elems = { 1 } };
+
+    enum caut_status const init_stat =
+        schema_size_iterator_init(
+            ssi, sd, tsi,
+            SCHEMA_DEPTH_caut_test,
+            type_id_caut_test_vec,
+            &enc);
+
+    ASSERT_EQ(caut_status_ok, init_stat);
+
+    size_t size = 0;
+    enum caut_status const enc_status =
+        caut_size_get(ssi, &size);
+
+    ASSERT_EQ(caut_status_ok, enc_status);
+    ASSERT_EQ(5, size);
+
+    PASS();
+}
+
+TEST test_size_record(void) {
+    struct rec enc = { .a = 1, .b = 2, .c = { ._length = 2, .elems = { 2, 3 } } };
+
+    enum caut_status const init_stat =
+        schema_size_iterator_init(
+            ssi, sd, tsi,
+            SCHEMA_DEPTH_caut_test,
+            type_id_caut_test_rec,
+            &enc);
+
+    ASSERT_EQ(caut_status_ok, init_stat);
+
+    size_t size = 0;
+    enum caut_status const enc_status =
+        caut_size_get(ssi, &size);
+    ASSERT_EQ(caut_status_ok, enc_status);
+    ASSERT_EQ(15, size);
+
+    PASS();
+}
+
+TEST test_size_combination(void) {
+    struct comb enc = { ._flags = 0x4, .c = 5 };
+
+    enum caut_status const init_stat =
+        schema_size_iterator_init(
+            ssi, sd, tsi,
+            SCHEMA_DEPTH_caut_test,
+            type_id_caut_test_comb,
+            &enc);
+
+    ASSERT_EQ(caut_status_ok, init_stat);
+
+    size_t size = 0;
+    enum caut_status const enc_status =
+        caut_size_get(ssi, &size);
+
+    ASSERT_EQ(caut_status_ok, enc_status);
+    ASSERT_EQ_FMT(2, size, "%u");
+
+    PASS();
+}
+
+TEST test_size_union(void) {
+    struct uni enc = { ._tag = uni_tag_c, .c = 5 };
+
+    enum caut_status const init_stat =
+        schema_size_iterator_init(
+            ssi, sd, tsi,
+            SCHEMA_DEPTH_caut_test,
+            type_id_caut_test_uni,
+            &enc);
+
+    ASSERT_EQ(caut_status_ok, init_stat);
+
+    size_t size = 0;
+    enum caut_status const enc_status =
+        caut_size_get(ssi, &size);
+
+    ASSERT_EQ(caut_status_ok, enc_status);
+    ASSERT_EQ(2, size);
+
+    PASS();
+}
+
+
 TEST test_float_in_vector(void) {
     // encode
     struct floatvec enc = { ._length = 1, .elems = { -4.64 } };
@@ -640,6 +841,18 @@ SUITE(decode) {
     RUN_TEST(test_decode_union);
 }
 
+SUITE(size) {
+    RUN_TEST(test_size_primitive);
+    RUN_TEST(test_size_synonym);
+    RUN_TEST(test_size_range);
+    RUN_TEST(test_size_enumeration);
+    RUN_TEST(test_size_array);
+    RUN_TEST(test_size_vector);
+    RUN_TEST(test_size_record);
+    RUN_TEST(test_size_combination);
+    RUN_TEST(test_size_union);
+}
+
 SUITE(corner) {
     RUN_TEST(test_float_in_vector);
     RUN_TEST(test_big_range_enc);
@@ -675,6 +888,10 @@ int main(int argc, char * argv[]) {
 
     sdi = calloc(sizeof(*sdi), 1);
     tdi = calloc(sizeof(*tdi), SCHEMA_DEPTH_caut_test);
+
+    ssi = calloc(sizeof(*ssi), 1);
+    tsi = calloc(sizeof(*tsi), SCHEMA_DEPTH_caut_test);
+
     enc_buffer = calloc(sizeof(uint8_t), MAX_SIZE_caut_test);
     buf_size = MAX_SIZE_caut_test;
 
@@ -688,6 +905,7 @@ int main(int argc, char * argv[]) {
     RUN_SUITE(encode);
     RUN_SUITE(decode);
     RUN_SUITE(corner);
+    RUN_SUITE(size);
 
     GREATEST_MAIN_END();
 

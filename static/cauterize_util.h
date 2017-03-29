@@ -2,10 +2,11 @@
 #define CAUTERIZE_UTIL_H
 
 #include "cauterize_types.h"
+#include "cauterize_descriptors.h"
 
 #include <stddef.h>
 #include <stdint.h>
-
+#include <stdbool.h>
 
 // return error if error
 #define RE(EXP) \
@@ -29,9 +30,19 @@
 
 #define STATE_CHECK(cond) do { if (!(cond)) { return caut_status_err_bad_state; } } while (0)
 
+struct range_value {
+    bool is_signed;
+    union {
+        uint64_t u;
+        int64_t s;
+        uint8_t b[sizeof(uint64_t)];
+    } u;
+};
+
 size_t caut_tag_size(enum caut_tag tag);
 void signed_convert(void const * in, size_t in_size, void * out, size_t out_size);
 uint64_t mask_with_width(size_t width);
 uint64_t flag_set_at(size_t width);
+bool range_convert(void const * type, struct caut_range const * desc, struct range_value * val);
 
 #endif /* CAUTERIZE_UTIL_H */
