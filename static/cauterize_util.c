@@ -1,7 +1,7 @@
 #include "cauterize_util.h"
 
 #include <assert.h>
-#include <stdbool.h>
+#include <string.h>
 
 size_t caut_tag_size(enum caut_tag tag) {
     switch (tag) {
@@ -72,4 +72,37 @@ uint64_t flag_set_at(size_t width) {
     ret <<= width;
 
     return ret;
+}
+
+bool range_convert(void const * type, struct caut_range const * desc, struct range_value * val) {
+    if (desc->offset < 0) {
+        val->is_signed = true;
+
+        int64_t const rmin = desc->offset;
+        int64_t const rmax = desc->offset + desc->length;
+
+        signed_convert(type, desc->word_size, &val->u.s, sizeof(val->u.s));
+
+        if (val->u.s < rmin || rmax < val->u.s) {
+            return false;
+        } else {
+            val->u.s -= desc->offset;
+        }
+
+    } else {
+        val->is_signed = false;
+
+        uint64_t const rmin = desc->offset;
+        uint64_t const rmax = desc->offset + desc->length;
+
+        memcpy(&val->u.u, type, desc->word_size);
+
+        if (val->u.u < rmin || rmax < val->u.u) {
+            return false;
+        } else {
+            val->u.u -= (uint64_t)desc->offset;
+        }
+    }
+
+    return true;
 }

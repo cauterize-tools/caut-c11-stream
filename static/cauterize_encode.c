@@ -1,5 +1,6 @@
 #include "cauterize.h"
 #include "cauterize_util.h"
+#include "cauterize_encode.h"
 
 #include <stdbool.h>
 #include <string.h>
@@ -109,42 +110,18 @@ static S caut_enc_get_byte_range(SEI * ei, TD const * td, TEI * ti, bool * progr
     (void) ei;
 
     if (iter->tag_iter.tag_position < caut_tag_size(desc->tag)) {
-        union {
-            uint64_t u;
-            int64_t s;
-            uint8_t b[sizeof(uint64_t)];
-        } tag = { .u = 0 };
 
-        if (desc->offset < 0) {
-            int64_t const rmin = desc->offset;
-            int64_t const rmax = desc->offset + desc->length;
+        struct range_value val = { .is_signed = false };
 
-            signed_convert(ti->type, desc->word_size, &tag.s, sizeof(tag.s));
-
-            if (tag.s < rmin || rmax < tag.s) {
-                return caut_status_err_invalid_range;
-            } else {
-                tag.s -= desc->offset;
-            }
-
-        } else {
-            uint64_t const rmin = desc->offset;
-            uint64_t const rmax = desc->offset + desc->length;
-
-            memcpy(&tag.u, ti->type, desc->word_size);
-
-            if (tag.u < rmin || rmax < tag.u) {
-                return caut_status_err_invalid_range;
-            } else {
-                tag.u -= (uint64_t)desc->offset;
-            }
+        if (!range_convert(ti->type, desc, &val)) {
+            return caut_status_err_invalid_range;
         }
 
         if (NULL == byte) {
             return caut_status_err_need_byte;
         } else {
             *progress = true;
-            *byte = tag.b[iter->tag_iter.tag_position];
+            *byte = val.u.b[iter->tag_iter.tag_position];
             iter->tag_iter.tag_position += 1;
 
             return caut_status_ok_busy;

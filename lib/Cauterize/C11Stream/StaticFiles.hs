@@ -20,6 +20,8 @@ allFiles =
   , EMBED_STATIC("cauterize_info.h")
   , EMBED_STATIC("cauterize_encode.c")
   , EMBED_STATIC("cauterize_encode.h")
+  , EMBED_STATIC("cauterize_size.c")
+  , EMBED_STATIC("cauterize_size.h")
   , EMBED_STATIC("cauterize_iterators.c")
   , EMBED_STATIC("cauterize_iterators.h")
   , EMBED_STATIC("cauterize_types.h")
