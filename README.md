@@ -6,3 +6,4 @@
 
 * John Van Enk
 * Jay Kickliter
+* Pat Hickey
