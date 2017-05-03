@@ -1,0 +1,38 @@
+# This informs travis to use a docker container
+sudo: false
+
+# Since we're using a container, we can cache specified directories
+# Specifally, let's cache haskell-stack related stuff since it's slow to rebuild
+cache:
+  directories:
+  - $HOME/.stack
+
+# Just use `c` since we're going to download the Haskell compiler (GHC) via stack
+language: c
+
+matrix:
+  include:
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-4.7
+            - libgmp3-dev
+      env: COMPILER=gcc-4.7
+    - compiler: clang
+      addons:
+        apt:
+          packages:
+            - libgmp3-dev
+      env: COMPILER=clang
+
+before_install:
+  - mkdir -p ~/.local/bin
+  - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+  - stack setup
+
+script:
+  - make
+  - sh run_crucible.sh
