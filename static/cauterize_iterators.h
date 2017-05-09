@@ -132,7 +132,7 @@ enum caut_status get_type_enc_iter(
     struct type_encode_iterator ** ti_out);
 
 enum caut_status get_type_dec_iter(
-    struct schema_decode_iterator const * ei,
+    struct schema_decode_iterator const * di,
     struct type_decode_iterator ** ti_out);
 
 enum caut_status get_type_size_iter(
